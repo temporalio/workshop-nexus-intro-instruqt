@@ -1,9 +1,11 @@
 ---
 slug: polyglot-demo
-id: ""
+id: tfghat3l7rq0
 type: challenge
 title: Polyglot Connector Demo
-teaser: Stop the Python Compliance Worker, start a pre-built Java Compliance Worker on the same task queue, and re-run a normal transaction. Same Service contract, different language, no Python code change.
+teaser: Stop the Python Compliance Worker, start a pre-built Java Compliance Worker
+  on the same task queue, and re-run a normal transaction. Same Service contract,
+  different language, no Python code change.
 notes:
 - type: text
   contents: |-
@@ -21,31 +23,35 @@ notes:
 
     This is the polyglot story Nexus is built for.
 tabs:
-- title: Code Editor
+- id: dpnlvo1xqbnk
+  title: Code Editor
   type: code
   hostname: workshop
   path: /root/workshop/polyglot/java-legacy
-- title: Compliance Worker
+- id: iuohxevuui2i
+  title: Compliance Worker
   type: terminal
   hostname: workshop
   workdir: /root/workshop/polyglot/java-legacy
-- title: Payments Worker
+- id: rhbebiylv3ci
+  title: Payments Worker
   type: terminal
   hostname: workshop
   workdir: /root/workshop/exercises/07_lifecycle/exercise
-- title: Starter
+- id: nlb3ygsastqp
+  title: Starter
   type: terminal
   hostname: workshop
   workdir: /root/workshop/exercises/07_lifecycle/exercise
-- title: Temporal UI
+- id: 2pxhtk6xwtjz
+  title: Temporal UI
   type: service
   hostname: workshop
   port: 8233
 difficulty: basic
 timelimit: 600
+enhanced_loading: null
 ---
-
-# Chapter 8: Polyglot Connector Demo
 
 This chapter has no TODOs. The Java Compliance Worker has been
 pre-built and is sitting at `/root/workshop/polyglot/java-legacy/`.
@@ -53,7 +59,7 @@ You will start it on the **same** `compliance-risk` task queue the
 Python Worker was using, then re-run a normal transaction and watch
 the Java handler fulfill the same Nexus contract.
 
-## Why this chapter exists
+# Why this chapter exists
 
 The Service contract you wrote in Chapter 2 is a typed Python class.
 Decorators on it (`@nexusrpc.service`,
@@ -92,7 +98,7 @@ are not interchangeable, only one of (Python, Java) Compliance Worker
 may be active on `compliance-risk` at a time. In this chapter we
 stop Python and start Java.
 
-## What you will do
+# What you will do
 
 - Confirm the pre-built Java Worker is on disk.
 - Start the Java Compliance Worker on `compliance-risk`.
@@ -101,7 +107,7 @@ stop Python and start Java.
 - See a Java-authored compliance workflow appear in
   `compliance-namespace`.
 
-## Step 1: Confirm the Java Worker is on disk
+# Step 1: Confirm the Java Worker is on disk
 
 Click the [button label="Code Editor" background="#444CE7"](tab-0).
 The editor is rooted at `/root/workshop/polyglot/java-legacy/`. You
@@ -120,7 +126,7 @@ The Java Worker has already been compiled when the workshop image was
 built. There is a `target/` directory with the dependency jars and
 class files. **You do not run `mvn package` here.**
 
-## Step 2: Start the Java Compliance Worker
+# Step 2: Start the Java Compliance Worker
 
 Click the
 [button label="Compliance Worker" background="#444CE7"](tab-1)
@@ -134,7 +140,7 @@ mvn -q exec:java
 You should see Maven start, JVM start, then the Java SDK banner and
 finally:
 
-```output
+```bash,nocopy
 ComplianceWorkerApp: started
   Namespace:   compliance-namespace
   Task Queue:  compliance-risk
@@ -151,7 +157,7 @@ language.
 > something has gone wrong with the dev server. Run
 > `temporal operator cluster health` in any other terminal to verify.
 
-## Step 3: Start the Payments Worker
+# Step 3: Start the Payments Worker
 
 Click the
 [button label="Payments Worker" background="#444CE7"](tab-2) terminal.
@@ -167,7 +173,7 @@ The Endpoint name is the same. The Operation names are the same. The
 JSON shapes are the same. The fact that a Java handler is on the
 other end is invisible to it.
 
-## Step 4: Run a transaction
+# Step 4: Run a transaction
 
 Click the [button label="Starter" background="#444CE7"](tab-3)
 terminal. Run the regular starter (not the lifecycle starter):
@@ -194,7 +200,7 @@ includes the *content* of the result, not just its shape.
 > scope for the polyglot demo. The standard starter exercises the
 > happy path that both implementations share.
 
-## Step 5: Inspect the Java-authored workflow
+# Step 5: Inspect the Java-authored workflow
 
 Click the
 [button label="Temporal UI" background="#444CE7"](tab-4) tab. Switch
@@ -225,7 +231,7 @@ shows the same three events the pure-Python Chapter 5 run produced:
 order. The bytes are written by Java code on the handler side, but
 the caller cannot tell.
 
-## Step 6: Stop both Workers
+# Step 6: Stop both Workers
 
 Press `Ctrl+C` in both Worker terminals, or:
 
@@ -234,7 +240,7 @@ pkill -f "payments.worker"     || true
 pkill -f "ComplianceWorkerApp" || true
 ```
 
-## Wrapping up
+# Wrapping up
 
 That is the workshop. You built a Nexus Service contract in Python,
 implemented it as a sync handler, swapped the caller, made it async

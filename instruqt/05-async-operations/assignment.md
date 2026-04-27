@@ -1,9 +1,11 @@
 ---
 slug: async-operations
-id: ""
+id: nhoqxds3wrbv
 type: challenge
 title: Async Operations Backed by a Workflow
-teaser: Convert the check_compliance handler to a workflow-backed async Operation, register the ComplianceWorkflow on the worker, and observe the three-event async lifecycle.
+teaser: Convert the check_compliance handler to a workflow-backed async Operation,
+  register the ComplianceWorkflow on the worker, and observe the three-event async
+  lifecycle.
 notes:
 - type: text
   contents: |-
@@ -22,31 +24,35 @@ notes:
     In this chapter you flip `check_compliance` to async and watch
     the lifecycle change.
 tabs:
-- title: Code Editor
+- id: cbdqievelgx9
+  title: Code Editor
   type: code
   hostname: workshop
   path: /root/workshop/exercises/05_async_operations/exercise
-- title: Compliance Worker
+- id: xix4nycyr38v
+  title: Compliance Worker
   type: terminal
   hostname: workshop
   workdir: /root/workshop/exercises/05_async_operations/exercise
-- title: Payments Worker
+- id: polxarxaeipa
+  title: Payments Worker
   type: terminal
   hostname: workshop
   workdir: /root/workshop/exercises/05_async_operations/exercise
-- title: Starter
+- id: xtqg4csilq1s
+  title: Starter
   type: terminal
   hostname: workshop
   workdir: /root/workshop/exercises/05_async_operations/exercise
-- title: Temporal UI
+- id: vogmdmgaxlxj
+  title: Temporal UI
   type: service
   hostname: workshop
   port: 8233
 difficulty: intermediate
 timelimit: 1500
+enhanced_loading: null
 ---
-
-# Chapter 5: Async Operations Backed by a Workflow
 
 The `check_compliance` handler currently fits in 10 seconds because the
 rule-based check is fast. It will not always be that simple. Real
@@ -54,7 +60,7 @@ compliance can take seconds to minutes (database lookups, third-party
 KYC APIs, manual review). Anything that can outlive a sync handler
 needs to be backed by a **workflow**. This chapter makes that change.
 
-## Why this chapter exists
+# Why this chapter exists
 
 A workflow-backed async Operation has a different shape from a sync
 Operation:
@@ -81,7 +87,7 @@ You will also implement `ComplianceWorkflow.run` itself, which simply
 runs the rule-based check as an Activity and returns the result. The
 workflow is small for now; Chapter 6 grows it to support human review.
 
-## What you will do
+# What you will do
 
 - Apply **TODO 6** to implement `ComplianceWorkflow.run`.
 - Apply **TODO 7** to convert the `check_compliance` handler from
@@ -94,7 +100,7 @@ workflow is small for now; Chapter 6 grows it to support human review.
 - Run the system end-to-end and observe the three-event async
   lifecycle in the Web UI.
 
-## Step 1: Apply TODO 6 in `compliance/workflows.py`
+# Step 1: Apply TODO 6 in `compliance/workflows.py`
 
 Open `compliance/workflows.py` in the
 [button label="Code Editor" background="#444CE7"](tab-0). The file
@@ -123,7 +129,7 @@ Two notes:
   variable so Chapter 6 can extend this method with a MEDIUM-risk
   `wait_condition` without restructuring the whole `run` method.
 
-## Step 2: Apply TODO 7 in `compliance/service_handler.py`
+# Step 2: Apply TODO 7 in `compliance/service_handler.py`
 
 Open `compliance/service_handler.py`. Find the TODO 7 comment in the
 sync `check_compliance` method. Replace the entire method body with
@@ -168,7 +174,7 @@ from compliance.activities import check_compliance as _check_compliance
 The activity now runs inside `ComplianceWorkflow`, not the Nexus
 handler, so this alias is dead code.
 
-## Step 3: Apply TODO 8 in `compliance/worker.py`
+# Step 3: Apply TODO 8 in `compliance/worker.py`
 
 Open `compliance/worker.py`. Find the TODO 8 comment in the
 `Worker(...)` constructor. Add `workflows` and `activities` arguments
@@ -190,7 +196,7 @@ The activity is sync (it calls `print` for logging), so use the
 ThreadPoolExecutor. The Compliance Worker is now a full Temporal
 Worker: workflows, activities, **and** Nexus handlers.
 
-## Step 4: Apply TODO 9 in `payments/workflows.py`
+# Step 4: Apply TODO 9 in `payments/workflows.py`
 
 Open `payments/workflows.py`. Find the TODO 9 comment near the Nexus
 operation call. Add the two missing timeouts:
@@ -220,7 +226,7 @@ What each does:
 These timeouts only matter once the handler is async. A sync handler
 hits the 10-second deadline before any of these expire.
 
-## Step 5: Start the Compliance Worker
+# Step 5: Start the Compliance Worker
 
 Click the
 [button label="Compliance Worker" background="#444CE7"](tab-1)
@@ -232,15 +238,13 @@ uv run python -m compliance.worker
 
 The startup banner now shows three things registered:
 
-```output
-=========================================================
+```bash,nocopy
   Compliance Worker started on: compliance-risk
   Namespace: compliance-namespace
   Registered: ComplianceWorkflow, check_compliance, ComplianceNexusServiceHandler
-=========================================================
 ```
 
-## Step 6: Start the Payments Worker
+# Step 6: Start the Payments Worker
 
 Click the
 [button label="Payments Worker" background="#444CE7"](tab-2) terminal:
@@ -252,7 +256,7 @@ uv run python -m payments.worker
 No changes from Chapter 4 on the Payments side aside from the timeouts
 in the workflow.
 
-## Step 7: Run the starter
+# Step 7: Run the starter
 
 Click the [button label="Starter" background="#444CE7"](tab-3)
 terminal:
@@ -264,7 +268,7 @@ uv run python -m payments.starter
 You should see the same three results: TXN-A LOW, TXN-B MEDIUM with
 monitoring, TXN-C declined HIGH.
 
-## Step 8: Inspect the async lifecycle in the Web UI
+# Step 8: Inspect the async lifecycle in the Web UI
 
 Click the
 [button label="Temporal UI" background="#444CE7"](tab-4) tab. Switch
@@ -291,7 +295,7 @@ durable workflow on the Compliance side that can survive worker
 restarts, can run for up to 60 days, and can be inspected, queried,
 or cancelled independently of the caller.
 
-## Step 9 (optional): Durability test
+# Step 9 (optional): Durability test
 
 If you have time, kill the Compliance Worker mid-flight:
 
@@ -304,7 +308,7 @@ The handler workflows resume from where they stopped, the activities
 complete, and the Nexus operation reports Completed. The caller never
 notices the worker restart.
 
-## Step 10: Stop both Workers
+# Step 10: Stop both Workers
 
 Press `Ctrl+C` in both Worker terminals, or:
 
@@ -313,7 +317,7 @@ pkill -f "compliance.worker" || true
 pkill -f "payments.worker"   || true
 ```
 
-## Wrapping up
+# Wrapping up
 
 You converted `check_compliance` from a sync handler to a
 workflow-backed async handler. The caller's history grew the
