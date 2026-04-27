@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euxo pipefail
+source /root/.bashrc
+
+pkill -f "payments.worker"   || true
+pkill -f "compliance.worker" || true
+sleep 1
+
+# Chapter 1 has no exercise/, only solution/. Run the monolith end-to-end.
+cd /root/workshop/exercises/01_run_monolith/solution
+
+uv run python -m payments.worker &
+PAYMENTS_PID=$!
+sleep 3
+
+uv run python -m payments.starter
+
+kill $PAYMENTS_PID 2>/dev/null || true
+wait $PAYMENTS_PID 2>/dev/null || true

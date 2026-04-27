@@ -1,0 +1,34 @@
+#!/bin/bash
+set -euxo pipefail
+source /root/.bashrc
+
+pkill -f "payments.worker"   || true
+pkill -f "compliance.worker" || true
+sleep 1
+
+SOLUTION=/root/workshop/exercises/06_updates/solution
+EXERCISE=/root/workshop/exercises/06_updates/exercise
+cp -r "$SOLUTION/." "$EXERCISE/"
+
+cd "$EXERCISE"
+
+uv run python -m compliance.worker &
+COMPLIANCE_PID=$!
+sleep 3
+
+uv run python -m payments.worker &
+PAYMENTS_PID=$!
+sleep 3
+
+# Run the starter in the background so we can submit the review while it waits.
+uv run python -m payments.starter &
+STARTER_PID=$!
+sleep 12
+
+uv run python -m payments.review_starter
+
+wait $STARTER_PID 2>/dev/null || true
+
+kill $COMPLIANCE_PID $PAYMENTS_PID 2>/dev/null || true
+wait $COMPLIANCE_PID 2>/dev/null || true
+wait $PAYMENTS_PID   2>/dev/null || true

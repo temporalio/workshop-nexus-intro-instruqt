@@ -1,0 +1,11 @@
+#!/bin/bash
+# Track-level cleanup. Runs once when the track is torn down.
+# Per-challenge cleanup scripts kill workers; this catches anything else
+# and stops the Temporal dev server.
+
+set -euo pipefail
+
+pkill -f "payments.worker"     || true
+pkill -f "compliance.worker"   || true
+pkill -f "ComplianceWorkerApp" || true
+pkill -f "temporal server"     || true

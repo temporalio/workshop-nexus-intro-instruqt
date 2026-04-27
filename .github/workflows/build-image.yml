@@ -1,0 +1,44 @@
+name: Build sandbox image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docker/**"
+      - ".github/workflows/build-image.yml"
+  repository_dispatch:
+    types: [code-repo-updated]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/temporalio/workshop-nexus-intro-sandbox
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout workshop-nexus-intro-code (private)
+        uses: actions/checkout@v4
+        with:
+          repository: temporalio/workshop-nexus-intro-code
+          token: ${{ secrets.WORKSHOP_CODE_PAT }}
+          path: workshop-nexus-intro-code
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}

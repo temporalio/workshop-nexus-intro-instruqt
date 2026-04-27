@@ -1,0 +1,38 @@
+slug: introduction-to-temporal-nexus
+id: ""
+title: Introduction to Temporal Nexus
+teaser: Decouple a Temporal monolith into namespace-isolated services connected by a Nexus Endpoint, then layer in async operations, human-in-the-loop updates, lifecycle controls, and a polyglot connector demo.
+description: |-
+  A 3.5-hour hands-on workshop introducing Temporal Nexus through a payment
+  processing scenario. You will decouple a monolith into Payments and
+  Compliance services running in separate namespaces, connect them with a
+  Nexus Endpoint, then layer in asynchronous operations, human-in-the-loop
+  updates, lifecycle controls (cancellation, errors, circuit breaker), and a
+  polyglot connector demo where the same Service contract is fulfilled by a
+  Java handler.
+icon: ""
+tags:
+  - temporal
+  - nexus
+  - python
+  - java
+  - workflows
+  - cross-namespace
+  - integration-patterns
+owner: temporal
+developers:
+  - mason.egger@temporal.io
+idle_timeout: 7200
+timelimit: 16200
+lab_config:
+  extend_ttl: 900
+  sidebar_enabled: true
+  feedback_recap_enabled: true
+  feedback_tab_enabled: true
+  loadingMessages: true
+  theme:
+    name: modern-dark
+  override_challenge_layout: true
+  hideStopButton: false
+  default_layout: AssignmentRight
+  default_layout_sidebar_size: 40

@@ -1,0 +1,27 @@
+#!/bin/bash
+set -euxo pipefail
+source /root/.bashrc
+
+pkill -f "payments.worker"   || true
+pkill -f "compliance.worker" || true
+sleep 1
+
+SOLUTION=/root/workshop/exercises/05_async_operations/solution
+EXERCISE=/root/workshop/exercises/05_async_operations/exercise
+cp -r "$SOLUTION/." "$EXERCISE/"
+
+cd "$EXERCISE"
+
+uv run python -m compliance.worker &
+COMPLIANCE_PID=$!
+sleep 3
+
+uv run python -m payments.worker &
+PAYMENTS_PID=$!
+sleep 3
+
+uv run python -m payments.starter
+
+kill $COMPLIANCE_PID $PAYMENTS_PID 2>/dev/null || true
+wait $COMPLIANCE_PID 2>/dev/null || true
+wait $PAYMENTS_PID   2>/dev/null || true

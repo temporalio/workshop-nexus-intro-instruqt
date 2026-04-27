@@ -216,3 +216,24 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---- Workshop-specific additions ----
+
+# Editor / OS
+.DS_Store
+.vscode/
+*.swp
+*.swo
+
+# Workshop scratch
+commit-msg.md
+instruqt-plan-og.md
+
+# Slidev (when added)
+node_modules/
+dist/
+.slidev/
+
+# Claude / AI session artifacts (local)
+.ai-sessions/
+.claude/

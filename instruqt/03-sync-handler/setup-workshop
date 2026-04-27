@@ -1,0 +1,21 @@
+#!/bin/bash
+set -euxo pipefail
+source /root/.bashrc
+
+pkill -f "payments.worker"     || true
+pkill -f "compliance.worker"   || true
+pkill -f "ComplianceWorkerApp" || true
+
+CHAPTER=03_sync_handler
+# Sparse-stage: wipe all chapters and copy in only the current one.
+rm -rf /root/workshop/exercises
+mkdir -p /root/workshop/exercises
+cp -r "/opt/workshop/exercises/$CHAPTER" "/root/workshop/exercises/$CHAPTER"
+
+# Belt-and-braces Endpoint create in case the attendee skipped Ch 2 via solve.
+temporal operator nexus endpoint create \
+    --name compliance-endpoint \
+    --target-namespace compliance-namespace \
+    --target-task-queue compliance-risk \
+    --description-file /root/workshop/compliance-endpoint.md \
+    --address 127.0.0.1:7233 || true
