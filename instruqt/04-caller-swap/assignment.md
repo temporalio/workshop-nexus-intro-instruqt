@@ -56,12 +56,14 @@ timelimit: 1500
 enhanced_loading: null
 ---
 
+# Chapter 4: Swap the Caller to Nexus
+
 This is the moment the application stops being a monolith. The
 Payments Workflow stops calling a local Activity for compliance and
 starts calling the Compliance team's Nexus Operation instead. Once
 that swap lands, no Compliance code runs in the Payments Worker.
 
-# Why this chapter exists
+## Why this chapter exists
 
 Chapter 3 stood up the Compliance handler. Chapter 2 created the
 Endpoint. Both halves of the routing infrastructure exist. What is
@@ -94,7 +96,7 @@ Payments Worker's Activities list. The Payments Worker no longer
 needs that import; it lives entirely on the caller side of the Nexus
 boundary.
 
-# What you will do
+## What you will do
 
 - Apply **TODO 4** to swap the activity call for a Nexus call in
   `payments/workflows.py`.
@@ -107,7 +109,7 @@ boundary.
 - Inspect the Event History to confirm the two-event sync pattern
   (`NexusOperationScheduled`, `NexusOperationCompleted`).
 
-# Step 1: Apply TODO 4 in `payments/workflows.py`
+## Step 1: Apply TODO 4 in `payments/workflows.py`
 
 Open `payments/workflows.py` in the
 [button label="Code Editor" background="#444CE7"](tab-0). Find the
@@ -160,7 +162,7 @@ Two things to notice:
 Also remove the now-unused `check_compliance` import from the top of
 the file. Your editor or `ruff` will flag it.
 
-# Step 2: Apply TODO 5 in `payments/worker.py`
+## Step 2: Apply TODO 5 in `payments/worker.py`
 
 Open `payments/worker.py`. Find the TODO 5 comment in the Activities
 list:
@@ -193,7 +195,7 @@ Two cleanups:
 After this, **the Payments Worker no longer imports any Compliance
 code.** Browse the file imports if you want to verify.
 
-# Step 3: Start the Compliance Worker
+## Step 3: Start the Compliance Worker
 
 Click the
 [button label="Compliance Worker" background="#444CE7"](tab-1)
@@ -205,7 +207,7 @@ uv run python -m compliance.worker
 
 Same Worker as Chapter 3. Leave it running.
 
-# Step 4: Start the Payments Worker
+## Step 4: Start the Payments Worker
 
 Click the
 [button label="Payments Worker" background="#444CE7"](tab-2) terminal:
@@ -220,7 +222,7 @@ is created inside the workflow at runtime, not registered on the
 Worker.) The Activities list should be `validate_payment,
 execute_payment` only.
 
-# Step 5: Run the starter
+## Step 5: Run the starter
 
 Click the [button label="Starter" background="#444CE7"](tab-3)
 terminal:
@@ -237,7 +239,7 @@ TXN-C declined HIGH. **Same outcomes, different mechanism.**
 > real human-in-the-loop review by replacing the sync handler with a
 > workflow-backed one that waits on a Workflow Update.
 
-# Step 6: Inspect the Event History
+## Step 6: Inspect the Event History
 
 Click the
 [button label="Temporal UI" background="#444CE7"](tab-4) tab. Switch
@@ -264,7 +266,7 @@ the Endpoint, and the namespace boundary, **without** paying for a
 second workflow. For short interactions, that is exactly what you
 want.
 
-# Step 7: Stop both Workers
+## Step 7: Stop both Workers
 
 Press `Ctrl+C` in both Worker terminals, or:
 
@@ -273,7 +275,7 @@ pkill -f "compliance.worker" || true
 pkill -f "payments.worker"   || true
 ```
 
-# Wrapping up
+## Wrapping up
 
 This was the structural pivot of the workshop. Before this chapter,
 Compliance and Payments were one process. After this chapter, they

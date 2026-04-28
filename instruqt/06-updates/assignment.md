@@ -63,13 +63,15 @@ timelimit: 1800
 enhanced_loading: null
 ---
 
+# Chapter 6: Updates Through Nexus
+
 This chapter gives the Compliance team a real human-in-the-loop
 review path. MEDIUM-risk transactions stop being auto-approved and
 start blocking until a human submits a decision. The mechanism is a
 **Workflow Update**, exposed across the Nexus boundary by reusing the
 `submit_review` Operation that has been a stub since Chapter 3.
 
-# Why this chapter exists
+## Why this chapter exists
 
 So far MEDIUM-risk transactions auto-approve with an "AML
 monitoring" note. That is fine for a demo but not for production. The
@@ -94,7 +96,7 @@ To get there, four pieces must come together:
 A pre-supplied `payments/review_starter.py` script kicks off a
 `ReviewCallerWorkflow`. You do not write the starter yourself.
 
-# What you will do
+## What you will do
 
 - Apply **TODO 10** to add the review path to `ComplianceWorkflow`:
   `_review_result` state, the MEDIUM-risk branch in `run`, the
@@ -106,12 +108,12 @@ A pre-supplied `payments/review_starter.py` script kicks off a
 - Run the starter, watch TXN-B block, run the review starter, watch
   TXN-B unblock and complete.
 
-# Step 1: Apply TODO 10 in `compliance/workflows.py`
+## Step 1: Apply TODO 10 in `compliance/workflows.py`
 
 Open `compliance/workflows.py` in the
 [button label="Code Editor" background="#444CE7"](tab-0). Three edits.
 
-## 1a. Add review state in `__init__`
+### 1a. Add review state in `__init__`
 
 ```python
 def __init__(self) -> None:
@@ -120,7 +122,7 @@ def __init__(self) -> None:
     self._review_result: ComplianceResult | None = None
 ```
 
-## 1b. Branch `run` on risk level
+### 1b. Branch `run` on risk level
 
 Replace the existing `run` body so LOW and HIGH return immediately,
 and MEDIUM sleeps then waits:
@@ -147,7 +149,7 @@ The `sleep(10)` is for the durability demo: it gives you a chance to
 kill and restart the Compliance Worker mid-pause and watch the
 workflow resume.
 
-## 1c. Add the Update handler and validator
+### 1c. Add the Update handler and validator
 
 Below `run`, add:
 
@@ -177,7 +179,7 @@ validator runs synchronously in the workflow context before the
 Update is accepted. If it raises, the Update is rejected and the
 workflow state is unchanged.
 
-# Step 2: Apply TODO 11 in `compliance/service_handler.py`
+## Step 2: Apply TODO 11 in `compliance/service_handler.py`
 
 Open `compliance/service_handler.py`. Find the
 `NotImplementedError` body inside `submit_review`. Replace it with the
@@ -223,9 +225,9 @@ The whole `submit_review` sync handler completes in well under 10
 seconds. **The workflow runs as long as it needs to; the sync handler
 is just a forwarder.**
 
-# Step 3: Apply TODO 12 in `payments/workflows.py` and `payments/worker.py`
+## Step 3: Apply TODO 12 in `payments/workflows.py` and `payments/worker.py`
 
-## 3a. Add `ReviewCallerWorkflow` to `payments/workflows.py`
+### 3a. Add `ReviewCallerWorkflow` to `payments/workflows.py`
 
 Open `payments/workflows.py`. Add `ReviewRequest` to the
 `imports_passed_through` block at the top of the file (so the
@@ -255,7 +257,7 @@ the reviewer flow. Reviewers do not call the Update directly; they
 trigger a `ReviewCallerWorkflow`, which goes through Nexus, which
 calls `submit_review`, which sends the Update.
 
-## 3b. Register `ReviewCallerWorkflow` in `payments/worker.py`
+### 3b. Register `ReviewCallerWorkflow` in `payments/worker.py`
 
 Open `payments/worker.py`. Update the import:
 
@@ -269,7 +271,7 @@ Update the `workflows` list in the `Worker(...)` call:
 workflows=[PaymentProcessingWorkflow, ReviewCallerWorkflow],
 ```
 
-# Step 4: Start the Compliance Worker
+## Step 4: Start the Compliance Worker
 
 Click the
 [button label="Compliance Worker" background="#444CE7"](tab-1)
@@ -279,7 +281,7 @@ terminal:
 uv run python -m compliance.worker
 ```
 
-# Step 5: Start the Payments Worker
+## Step 5: Start the Payments Worker
 
 Click the
 [button label="Payments Worker" background="#444CE7"](tab-2) terminal:
@@ -291,7 +293,7 @@ uv run python -m payments.worker
 The startup banner should now list both `PaymentProcessingWorkflow`
 and `ReviewCallerWorkflow`.
 
-# Step 6: Run the starter
+## Step 6: Run the starter
 
 Click the [button label="Starter" background="#444CE7"](tab-3)
 terminal:
@@ -311,7 +313,7 @@ What you should see:
 
 Leave the starter running.
 
-# Step 7: Submit the review
+## Step 7: Submit the review
 
 Click the [button label="Reviewer" background="#444CE7"](tab-4)
 terminal:
@@ -329,7 +331,7 @@ Watch the [button label="Starter" background="#444CE7"](tab-3) terminal:
 **TXN-B should unblock** as soon as the review lands. The starter
 moves on to TXN-C, which declines as HIGH risk, and exits.
 
-# Step 8: Inspect the Update events
+## Step 8: Inspect the Update events
 
 Click the
 [button label="Temporal UI" background="#444CE7"](tab-5) tab. Use the
@@ -351,7 +353,7 @@ There is also a separate workflow on the Payments side called
 `review-TXN-B` (the `ReviewCallerWorkflow`'s execution). It has its
 own three-event Nexus pattern for the `submit_review` Operation.
 
-# Step 9 (optional): Durability test
+## Step 9 (optional): Durability test
 
 Restart the starter from Step 6. While TXN-B is paused (between
 "started" and "completed"), kill the Compliance Worker. Wait a few
@@ -360,7 +362,7 @@ still gets through because the handler workflow resumes from where it
 stopped. Durability works because the workflow is real, not a sync
 handler.
 
-# Step 10: Stop both Workers
+## Step 10: Stop both Workers
 
 Press `Ctrl+C` in both Worker terminals, or:
 
@@ -369,7 +371,7 @@ pkill -f "compliance.worker" || true
 pkill -f "payments.worker"   || true
 ```
 
-# Wrapping up
+## Wrapping up
 
 You added a complete human-in-the-loop review path. MEDIUM-risk
 transactions block until a reviewer submits a decision, the decision

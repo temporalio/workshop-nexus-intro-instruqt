@@ -48,11 +48,13 @@ timelimit: 600
 enhanced_loading: null
 ---
 
+# Chapter 1: Run the Monolith
+
 Before you decouple anything, run the application as it ships today and
 feel where the seams are. This chapter is observation only. There is no
 code to edit.
 
-# Why this chapter exists
+## Why this chapter exists
 
 Every distributed-systems story has a "before" picture, and this is ours.
 
@@ -96,7 +98,7 @@ half independently. The bridge between the two will be a Temporal
 
 But first, the monolith.
 
-# What you will do
+## What you will do
 
 - Start the Payments Worker as it exists today (compliance and all).
 - Run three transactions through it: a low-risk approval, a medium-risk
@@ -105,7 +107,7 @@ But first, the monolith.
   ordinary `ActivityTaskScheduled` event in the Payments workflow's
   history. There is no boundary to be seen.
 
-# Step 1: Start the Payments Worker
+## Step 1: Start the Payments Worker
 
 Click the [button label="Worker" background="#444CE7"](tab-1) terminal.
 Start the Worker:
@@ -137,7 +139,7 @@ Two things to notice in that banner:
 
 Leave the Worker running. The next step uses a different terminal.
 
-# Step 2: Run three transactions
+## Step 2: Run three transactions
 
 Click the [button label="Starter" background="#444CE7"](tab-2)
 terminal. Run the starter:
@@ -188,7 +190,7 @@ blocks should look something like this:
 > function returned cleanly. This distinction matters again in
 > Chapter 7 when we look at real failures.
 
-# Step 3: Inspect the Web UI
+## Step 3: Inspect the Web UI
 
 Click the [button label="Temporal UI" background="#444CE7"](tab-3) tab.
 Make sure the namespace selector at the top is set to `default`.
@@ -219,7 +221,7 @@ replace the Activity call with a **Nexus Operation** call: a typed
 remote-invocation primitive that runs in a different namespace, with a
 different worker, owned by a different team.
 
-# Step 4: Stop the Worker
+## Step 4: Stop the Worker
 
 Back in the [button label="Worker" background="#444CE7"](tab-1)
 terminal, stop the Worker with `Ctrl+C` so it does not pollute the next
@@ -235,7 +237,7 @@ You can also stop it from the Starter terminal with:
 pkill -f "payments.worker" || true
 ```
 
-# Wrapping up
+## Wrapping up
 
 In this chapter you ran the application as it exists before any Nexus
 work. Three transactions executed end-to-end through a single Worker

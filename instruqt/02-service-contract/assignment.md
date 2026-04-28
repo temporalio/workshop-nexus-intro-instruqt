@@ -44,12 +44,14 @@ timelimit: 1200
 enhanced_loading: null
 ---
 
+# Chapter 2: Define the Nexus Service Contract
+
 In this chapter you define the shared Nexus Service contract between the
 Payments and Compliance teams, and stand up the routing infrastructure
 that will carry calls across the team boundary: a Nexus Endpoint that
 points callers at the Compliance team's task queue.
 
-# Why this chapter exists
+## Why this chapter exists
 
 Nexus exists so that two teams can call each other's Temporal code
 without sharing a codebase or a namespace. The mechanism that makes that
@@ -85,7 +87,7 @@ reads first when they want to call your Service.
 > what makes the contract a third artifact rather than something
 > either team can change unilaterally.
 
-# What you will do
+## What you will do
 
 - Apply **TODO 1** to add `@nexusrpc.service` and the typed Operation
   declarations to `shared/service.py`.
@@ -94,7 +96,7 @@ reads first when they want to call your Service.
   CLI, attaching a Markdown description from `compliance-endpoint.md`.
 - Find the Endpoint in the Web UI and read its Markdown description.
 
-# Step 1: Apply TODO 1 in `shared/service.py`
+## Step 1: Apply TODO 1 in `shared/service.py`
 
 Open `shared/service.py` in the
 [button label="Code Editor" background="#444CE7"](tab-0). The file
@@ -146,7 +148,7 @@ stub until Chapter 6 turns it into a real Update sender.
 > lines must use the `nexusrpc.Operation[Input, Output]` annotation
 > form (no `=`, no body).
 
-# Step 2: Verify the namespaces
+## Step 2: Verify the namespaces
 
 The Payments and Compliance teams will live in separate namespaces from
 Chapter 3 onwards. Each namespace is its own isolated execution
@@ -163,7 +165,7 @@ temporal operator namespace list
 You should see `payments-namespace` and `compliance-namespace`
 alongside `default` and `temporal-system`.
 
-# Step 3: Create the Nexus Endpoint
+## Step 3: Create the Nexus Endpoint
 
 A Nexus Endpoint is a routing rule. It tells the server: when a caller
 invokes the Endpoint named `compliance-endpoint`, deliver the request
@@ -198,7 +200,7 @@ temporal operator nexus endpoint get --name compliance-endpoint
 The `get` output should include the Markdown description from
 `compliance-endpoint.md` under the `Description` field.
 
-# Step 4: Find the Endpoint in the Web UI
+## Step 4: Find the Endpoint in the Web UI
 
 Click the [button label="Temporal UI" background="#444CE7"](tab-2)
 tab. In the left navigation, click **Nexus Endpoints** (or browse to
@@ -213,7 +215,7 @@ exposes before writing a caller workflow against it.**
 The Endpoint exists at the cluster level. It is not scoped to any one
 namespace. That is what lets it bridge teams.
 
-# Wrapping up
+## Wrapping up
 
 You wrote the contract that the Payments and Compliance teams will
 share, and you registered the routing rule that the dev server will use

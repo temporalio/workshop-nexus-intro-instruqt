@@ -56,13 +56,15 @@ timelimit: 1800
 enhanced_loading: null
 ---
 
+# Chapter 3: Implement the Sync Handler
+
 Now you write the Compliance side. By the end of the chapter the
 Compliance Worker will be running in `compliance-namespace`, polling
 the `compliance-risk` task queue, with a registered handler for the
 `check_compliance` Nexus Operation. Payments is unchanged; it still
 calls a local Activity.
 
-# Why this chapter exists
+## Why this chapter exists
 
 A Nexus Operation has two sides: the **caller** (the workflow that
 invokes the Operation) and the **handler** (the code that fulfills it).
@@ -90,7 +92,7 @@ The decorator stack that turns a class into a Nexus handler is small:
 That is the whole API. The handler is just an async method that takes
 the typed input and returns the typed output.
 
-# What you will do
+## What you will do
 
 - Apply **TODO 2** to decorate `ComplianceNexusServiceHandler` and
   implement the `check_compliance` and `submit_review` methods.
@@ -104,7 +106,7 @@ because Chapter 4 has not happened yet. The Compliance Worker is up
 but nothing is calling it. That is expected. We are validating the
 plumbing, not the data flow.
 
-# Step 1: Apply TODO 2 in `compliance/service_handler.py`
+## Step 1: Apply TODO 2 in `compliance/service_handler.py`
 
 Open `compliance/service_handler.py` in the
 [button label="Code Editor" background="#444CE7"](tab-0). The file
@@ -154,7 +156,7 @@ contract. If you mistype the input or output, Python's type checker
 will not catch it at file-load time, but the Nexus runtime will reject
 the registration when the Worker starts.
 
-# Step 2: Apply TODO 3 in `compliance/worker.py`
+## Step 2: Apply TODO 3 in `compliance/worker.py`
 
 Open `compliance/worker.py`. Find the TODO 3 comment in the `Worker(...)`
 constructor call. Add the `nexus_service_handlers` argument:
@@ -171,7 +173,7 @@ The Worker polls the `compliance-risk` task queue (set above by the
 `TASK_QUEUE` constant). That name **must** match the
 `--target-task-queue` you gave when creating the Endpoint in Chapter 2.
 
-# Step 3: Start the Compliance Worker
+## Step 3: Start the Compliance Worker
 
 Click the
 [button label="Compliance Worker" background="#444CE7"](tab-1)
@@ -198,7 +200,7 @@ Two things to notice:
 
 Leave the Worker running.
 
-# Step 4: Start the Payments Worker
+## Step 4: Start the Payments Worker
 
 Click the
 [button label="Payments Worker" background="#444CE7"](tab-2) terminal.
@@ -212,7 +214,7 @@ This is still the **monolith** version of the Payments Worker. It runs
 in `payments-namespace`, polls `payments-processing`, and uses its
 local `check_compliance` Activity. We swap that out in Chapter 4.
 
-# Step 5: Run the starter
+## Step 5: Run the starter
 
 Click the [button label="Starter" background="#444CE7"](tab-3)
 terminal. Run the starter:
@@ -230,7 +232,7 @@ routed through Nexus yet.**
 That is the expected end-state for Chapter 3. The Compliance Worker is
 a Nexus participant, but no caller has been wired to it.
 
-# Step 6: Confirm both Workers are healthy
+## Step 6: Confirm both Workers are healthy
 
 In the Web UI, click **Workers** in the left navigation. Switch
 namespaces with the selector at the top.
@@ -242,7 +244,7 @@ namespaces with the selector at the top.
 
 Both Workers are alive. Chapter 4 connects them.
 
-# Step 7: Stop both Workers
+## Step 7: Stop both Workers
 
 Press `Ctrl+C` in both Worker terminals (or use the cleanup at the
 end of the challenge). You can also stop them from the Starter
@@ -253,7 +255,7 @@ pkill -f "compliance.worker" || true
 pkill -f "payments.worker"   || true
 ```
 
-# Wrapping up
+## Wrapping up
 
 You wrote the synchronous handler that fulfills the `check_compliance`
 contract, and you stood up a brand new Compliance Worker to serve it.
