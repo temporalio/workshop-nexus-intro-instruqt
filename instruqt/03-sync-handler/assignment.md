@@ -51,6 +51,10 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
+- title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/03_sync_handler/solution
 difficulty: intermediate
 timelimit: 1800
 enhanced_loading: null

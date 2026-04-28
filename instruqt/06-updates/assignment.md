@@ -58,6 +58,10 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
+- title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/06_updates/solution
 difficulty: advanced
 timelimit: 1800
 enhanced_loading: null

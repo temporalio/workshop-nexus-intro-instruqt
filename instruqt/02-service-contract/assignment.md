@@ -39,6 +39,10 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
+- title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/02_service_contract/solution
 difficulty: basic
 timelimit: 1200
 enhanced_loading: null
@@ -76,11 +80,13 @@ Endpoints** in the Web UI and see the Endpoint description rendered as
 Markdown. That description is what an engineer on a different team
 reads first when they want to call your Service.
 
+> [!NOTE]
 > The two namespaces (`payments-namespace` and `compliance-namespace`)
 > were pre-created when you entered the workshop. The Endpoint is the
 > only routing artifact you create in this chapter. From now on, every
 > chapter assumes both namespaces exist.
 
+> [!NOTE]
 > The contract lives in the `shared/` package because both teams
 > import it. Neither team owns it. `payments/` and `compliance/` each
 > import `ComplianceNexusService` from `shared/service.py`, which is

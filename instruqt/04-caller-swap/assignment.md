@@ -51,6 +51,10 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
+- title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/04_caller_swap/solution
 difficulty: intermediate
 timelimit: 1500
 enhanced_loading: null
