@@ -29,6 +29,11 @@ tabs:
   type: code
   hostname: workshop
   path: /root/workshop/exercises/02_service_contract/exercise
+- id: mkyu8fxrz4kn
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/02_service_contract/solution
 - id: ystkhevci7d2
   title: Terminal
   type: terminal
@@ -39,13 +44,9 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
-- title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/02_service_contract/solution
 difficulty: basic
 timelimit: 1200
-enhanced_loading: null
+enhanced_loading: false
 ---
 
 # Chapter 2: Define the Nexus Service Contract
@@ -102,6 +103,10 @@ reads first when they want to call your Service.
   CLI, attaching a Markdown description from `compliance-endpoint.md`.
 - Find the Endpoint in the Web UI and read its Markdown description.
 
+> [!TIP]
+> Stuck on a TODO? The **Solution** tab shows the finished file. Try
+> the exercise first, then peek if you need to.
+
 ## Step 1: Apply TODO 1 in `shared/service.py`
 
 Open `shared/service.py` in the
@@ -144,6 +149,7 @@ Both Operations belong in the contract from the start. Chapter 3 will
 implement `check_compliance` for real, and `submit_review` will be a
 stub until Chapter 6 turns it into a real Update sender.
 
+> [!WARNING]
 > If you forget the `@nexusrpc.service` decorator, the file still
 > loads. The class is just an undecorated Python class with no Nexus
 > metadata. Nothing complains until a Worker tries to register a
@@ -162,7 +168,7 @@ environment with separate workflows, separate task queues, and separate
 access control. **Nexus is the only thing that crosses the boundary.**
 
 Both namespaces were created for you when the track started. Verify
-they exist. In the [button label="Terminal" background="#444CE7"](tab-1):
+they exist. In the [button label="Terminal" background="#444CE7"](tab-2):
 
 ```bash,run
 temporal operator namespace list
@@ -208,7 +214,7 @@ The `get` output should include the Markdown description from
 
 ## Step 4: Find the Endpoint in the Web UI
 
-Click the [button label="Temporal UI" background="#444CE7"](tab-2)
+Click the [button label="Temporal UI" background="#444CE7"](tab-3)
 tab. In the left navigation, click **Nexus Endpoints** (or browse to
 `/nexus/endpoints` directly).
 
@@ -233,9 +239,20 @@ In Chapter 3 you will write the **handler** that fulfills the
 `check_compliance` Operation, and you will register it on a brand new
 Compliance Worker that polls the `compliance-risk` task queue.
 
+> [!NOTE]
 > Take-away: the contract is ordinary Python. The Nexus runtime reads
 > the type annotations on a `@nexusrpc.service` class to figure out
 > what operations exist and what shape their requests and responses
 > take. The contract has no UI surface; it lives only in the Python
 > files both teams import. The Endpoint is the matching server-side
 > artifact, plus a description that documents what the contract does.
+
+> [!NOTE]
+> Knowledge check (instructor-led in Live Event mode, self-check in
+> self-paced mode):
+>
+> - Where does the Service contract live, and which packages import it?
+> - Which artifact does the Web UI show: the Service class, the
+>   Endpoint, or both?
+> - If you change the contract, do you need to restart the dev server
+>   or just the Workers that import it?

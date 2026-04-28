@@ -50,7 +50,7 @@ tabs:
   port: 8233
 difficulty: basic
 timelimit: 600
-enhanced_loading: null
+enhanced_loading: false
 ---
 
 # Chapter 8: Polyglot Connector Demo
@@ -60,6 +60,11 @@ pre-built and is sitting at `/root/workshop/polyglot/java-legacy/`.
 You will start it on the **same** `compliance-risk` task queue the
 Python Worker was using, then re-run a normal transaction and watch
 the Java handler fulfill the same Nexus contract.
+
+> [!NOTE]
+> This chapter has no separate **Solution** tab because there is no
+> exercise to solve. The **Code Editor** opens the finished Java
+> implementation directly.
 
 ## Why this chapter exists
 
@@ -155,6 +160,7 @@ The Java Worker is now polling `compliance-risk` in
 `compliance-namespace`. Same task queue, same namespace, different
 language.
 
+> [!WARNING]
 > If you see an error about port 7233 or "namespace not found,"
 > something has gone wrong with the dev server. Run
 > `temporal operator cluster health` in any other terminal to verify.
@@ -195,9 +201,10 @@ because the Java handler intentionally returns the same explanation
 text the Python handler does. That is the point: the contract
 includes the *content* of the result, not just its shape.
 
-> Note: The Java Worker is the Chapter 6-equivalent solution. It
-> implements both `check_compliance` (workflow-backed) and the review
-> path. It does **not** implement the Chapter 7 failure injections
+> [!NOTE]
+> The Java Worker is the Chapter 6-equivalent solution. It implements
+> both `check_compliance` (workflow-backed) and the review path. It
+> does **not** implement the Chapter 7 failure injections
 > (`TXN-FAIL-*`, `TXN-CIRCUIT-*`), so the lifecycle starter is out of
 > scope for the polyglot demo. The standard starter exercises the
 > happy path that both implementations share.
@@ -256,6 +263,7 @@ namespaces, blast radius, and **languages**. Whether the handler is
 Python today and Java tomorrow (or the reverse) is a decision the
 Compliance team can make on their own.
 
+> [!TIP]
 > Where to go next:
 >
 > - The Temporal docs on Nexus:
@@ -268,3 +276,14 @@ Compliance team can make on their own.
 > - For polyglot work: the `samples-java/.../nexus/` directory for
 >   how the Java side declares the same contract with explicit
 >   `@Operation(name=...)` and `@JsonProperty(...)` annotations.
+
+> [!NOTE]
+> Knowledge check:
+>
+> - Why does the Java handler need `@Operation(name = "...")` and
+>   `@JsonProperty(...)` annotations to be call-compatible with a
+>   Python-authored contract?
+> - The Endpoint, namespace, and task queue are all unchanged. Which
+>   artifact actually changed when you swapped Python for Java?
+> - What would have to be true on the wire for a third-language
+>   handler (say, Go) to drop in next?

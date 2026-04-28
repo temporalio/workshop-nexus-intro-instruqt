@@ -33,6 +33,11 @@ tabs:
   type: code
   hostname: workshop
   path: /root/workshop/exercises/07_lifecycle/exercise
+- id: rsans7ikp6kx
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/07_lifecycle/solution
 - id: jju6cnunjt9k
   title: Compliance Worker
   type: terminal
@@ -58,13 +63,9 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
-- title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/07_lifecycle/solution
 difficulty: advanced
 timelimit: 1500
-enhanced_loading: null
+enhanced_loading: false
 ---
 
 # Chapter 7: Cancellation, Errors, and the Circuit Breaker
@@ -116,6 +117,10 @@ breaker closes; fail it and the breaker reopens for another 60.
 - Use the Temporal UI and the `temporal workflow describe` CLI to
   observe each scenario.
 
+> [!TIP]
+> Stuck on the failure-injection branches? The **Solution** tab shows
+> the finished file. Try the exercise first, then peek if you need to.
+
 ## Step 1: Apply TODO 13 in `compliance/service_handler.py`
 
 Open `compliance/service_handler.py` in the
@@ -159,7 +164,7 @@ path. A normal transaction never matches a prefix and runs as before.
 ## Step 2: Start the Compliance Worker
 
 Click the
-[button label="Compliance Worker" background="#444CE7"](tab-1)
+[button label="Compliance Worker" background="#444CE7"](tab-2)
 terminal:
 
 ```bash,run
@@ -169,7 +174,7 @@ uv run python -m compliance.worker
 ## Step 3: Start the Payments Worker
 
 Click the
-[button label="Payments Worker" background="#444CE7"](tab-2) terminal:
+[button label="Payments Worker" background="#444CE7"](tab-3) terminal:
 
 ```bash,run
 uv run python -m payments.worker
@@ -178,17 +183,18 @@ uv run python -m payments.worker
 ## Step 4: Run the lifecycle starter
 
 Click the
-[button label="Lifecycle Starter" background="#444CE7"](tab-3)
+[button label="Lifecycle Starter" background="#444CE7"](tab-4)
 terminal. Run the pre-supplied starter:
 
 ```bash,run
 uv run python -m payments.lifecycle_starter
 ```
 
-This script runs four scenarios in sequence (~90 seconds total). Each
-scenario hits a different lifecycle path. **Keep an eye on the
-terminal output as each scenario runs**, then use the Inspector tab
-in Step 5 to drill in.
+This script runs four scenarios in sequence (roughly a minute and a
+half end to end, depending on how fast retries land). Each scenario
+hits a different lifecycle path. **Keep an eye on the terminal
+output as each scenario runs**, then use the Inspector tab in Step 5
+to drill in.
 
 The four scenarios:
 
@@ -219,7 +225,7 @@ The four scenarios:
 
 ## Step 5: Inspect each scenario
 
-Click the [button label="Inspector" background="#444CE7"](tab-4)
+Click the [button label="Inspector" background="#444CE7"](tab-5)
 terminal. Use it to run `temporal workflow describe` and `temporal
 workflow show` against the workflows the starter is touching.
 
@@ -237,7 +243,8 @@ The workflow status is `Failed`.
 
 ### Scenario B inspection
 
-While the starter is in scenario B (~20 seconds), run repeatedly:
+While the starter is in scenario B (roughly twenty seconds, give or
+take), run repeatedly:
 
 ```bash,run
 temporal workflow describe -w payment-TXN-FAIL-RETRY-1 -n payments-namespace
@@ -274,12 +281,14 @@ The default is `WAIT_COMPLETED`: the caller waits for the handler to
 finish cleanup before its own cancel completes. Pick the weakest one
 that meets your correctness needs.
 
+> [!NOTE]
 > Sync Nexus operations cannot be canceled because they hold no
 > operation token. Cancellation only applies to async,
 > workflow-backed handlers like `ComplianceWorkflow`. The Chapter 5
 > switch to `@nexus.workflow_run_operation` is what makes scenario C
 > possible at all.
->
+
+> [!NOTE]
 > A small wire-format aside: at the proto layer the SDK enum
 > `WAIT_REQUESTED` is named `WAIT_CANCELLATION_REQUESTED`. If you read
 > raw event payloads or replay output you will see the longer form.
@@ -306,7 +315,7 @@ in this demo, since every TXN-CIRCUIT- transaction still fails),
 the breaker closes again.
 
 Switch to the
-[button label="Temporal UI" background="#444CE7"](tab-5) tab and
+[button label="Temporal UI" background="#444CE7"](tab-6) tab and
 browse `payments-namespace`. The blocked workflows render with the
 same banner.
 
@@ -331,6 +340,7 @@ by a Java handler instead of the Python one, with **no Python code
 change** on the caller side. Same Endpoint, same task queue,
 different language.
 
+> [!IMPORTANT]
 > Production take-aways:
 >
 > - Use `OperationError(state=FAILED)` for "this can't succeed."
@@ -341,3 +351,14 @@ different language.
 >   same namespace.
 > - Cancellation type defaults to `WAIT_COMPLETED`. Use lighter
 >   modes when you cannot afford to wait for handler cleanup.
+
+> [!NOTE]
+> Knowledge check:
+>
+> - Which `HandlerErrorType` values are retryable, and which mark the
+>   operation as permanently failed?
+> - Why does cancellation propagate from a caller workflow to a
+>   handler workflow without any cancel-forwarding code on your side?
+> - The circuit breaker opens after how many consecutive retryable
+>   failures, and on which scope (per-Operation, per-Endpoint,
+>   per-(Namespace, Endpoint) pair)?

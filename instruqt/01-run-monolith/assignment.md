@@ -45,7 +45,7 @@ tabs:
   port: 8233
 difficulty: basic
 timelimit: 600
-enhanced_loading: null
+enhanced_loading: false
 ---
 
 # Chapter 1: Run the Monolith
@@ -53,6 +53,12 @@ enhanced_loading: null
 Before you decouple anything, run the application as it ships today and
 feel where the seams are. This chapter is observation only. There is no
 code to edit.
+
+> [!NOTE]
+> This chapter has no separate **Solution** tab because there is
+> nothing to write. The **Code Editor** opens the finished monolith.
+> From Chapter 2 on, the **Code Editor** opens the exercise and a
+> separate **Solution** tab shows the finished file.
 
 ## Why this chapter exists
 
@@ -66,6 +72,7 @@ namespace, with one set of dependencies**. The compliance check is
 implemented as an Activity (`check_compliance`) imported into the
 Payments Worker.
 
+> [!NOTE]
 > A note on framing: this monolith is the *most extreme* form of
 > coupling, where Compliance code is registered as an activity on the
 > Payments worker. In real production deployments most teams already
@@ -179,12 +186,14 @@ blocks should look something like this:
   Reason: Transaction amount exceeds $50,000 threshold. Requires enhanced due diligence review.
 ```
 
-> Note: TXN-B completing instead of waiting for human review is a
-> property of the rule-based checker we ship with: any MEDIUM-risk
-> transaction is auto-approved with a monitoring note. Chapter 6
-> introduces a real human-review path for MEDIUM transactions.
->
-> Note: `Result: DECLINED_COMPLIANCE` is a *return value* from the
+> [!NOTE]
+> TXN-B completing instead of waiting for human review is a property
+> of the rule-based checker we ship with: any MEDIUM-risk transaction
+> is auto-approved with a monitoring note. Chapter 6 introduces a
+> real human-review path for MEDIUM transactions.
+
+> [!NOTE]
+> `Result: DECLINED_COMPLIANCE` is a *return value* from the
 > Workflow, not a Workflow execution failure. The Temporal UI will
 > still show `payment-TXN-C` as `Completed`, because the Workflow
 > function returned cleanly. This distinction matters again in
@@ -251,6 +260,7 @@ the Nexus Endpoint that will route calls between them. The contract
 itself is small, and Chapter 2 is largely about what it means and where
 it lives. The actual decoupling happens across Chapters 3 and 4.
 
+> [!NOTE]
 > Knowledge check (instructor-led in Live Event mode, self-check in
 > self-paced mode):
 >

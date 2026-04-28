@@ -33,6 +33,11 @@ tabs:
   type: code
   hostname: workshop
   path: /root/workshop/exercises/06_updates/exercise
+- id: b5tctfffthpr
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/06_updates/solution
 - id: up4gg2xd1exm
   title: Compliance Worker
   type: terminal
@@ -58,13 +63,9 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
-- title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/06_updates/solution
 difficulty: advanced
 timelimit: 1800
-enhanced_loading: null
+enhanced_loading: false
 ---
 
 # Chapter 6: Updates Through Nexus
@@ -111,6 +112,10 @@ A pre-supplied `payments/review_starter.py` script kicks off a
   the Payments Worker.
 - Run the starter, watch TXN-B block, run the review starter, watch
   TXN-B unblock and complete.
+
+> [!TIP]
+> Stuck on a TODO? The **Solution** tab shows the finished file. Try
+> the exercise first, then peek if you need to.
 
 ## Step 1: Apply TODO 10 in `compliance/workflows.py`
 
@@ -278,7 +283,7 @@ workflows=[PaymentProcessingWorkflow, ReviewCallerWorkflow],
 ## Step 4: Start the Compliance Worker
 
 Click the
-[button label="Compliance Worker" background="#444CE7"](tab-1)
+[button label="Compliance Worker" background="#444CE7"](tab-2)
 terminal:
 
 ```bash,run
@@ -288,7 +293,7 @@ uv run python -m compliance.worker
 ## Step 5: Start the Payments Worker
 
 Click the
-[button label="Payments Worker" background="#444CE7"](tab-2) terminal:
+[button label="Payments Worker" background="#444CE7"](tab-3) terminal:
 
 ```bash,run
 uv run python -m payments.worker
@@ -299,7 +304,7 @@ and `ReviewCallerWorkflow`.
 
 ## Step 6: Run the starter
 
-Click the [button label="Starter" background="#444CE7"](tab-3)
+Click the [button label="Starter" background="#444CE7"](tab-4)
 terminal:
 
 ```bash,run
@@ -319,7 +324,7 @@ Leave the starter running.
 
 ## Step 7: Submit the review
 
-Click the [button label="Reviewer" background="#444CE7"](tab-4)
+Click the [button label="Reviewer" background="#444CE7"](tab-5)
 terminal:
 
 ```bash,run
@@ -331,14 +336,14 @@ approving TXN-B with an explanation, runs `ReviewCallerWorkflow`
 (which goes through `compliance-endpoint` -> `submit_review` ->
 Update), and prints the result.
 
-Watch the [button label="Starter" background="#444CE7"](tab-3) terminal:
+Watch the [button label="Starter" background="#444CE7"](tab-4) terminal:
 **TXN-B should unblock** as soon as the review lands. The starter
 moves on to TXN-C, which declines as HIGH risk, and exits.
 
 ## Step 8: Inspect the Update events
 
 Click the
-[button label="Temporal UI" background="#444CE7"](tab-5) tab. Use the
+[button label="Temporal UI" background="#444CE7"](tab-6) tab. Use the
 namespace selector at the top of the left navigation to switch to
 `compliance-namespace` and open `compliance-TXN-B`. In the Event
 History, find:
@@ -388,7 +393,8 @@ In Chapter 7 you switch from the happy path to the **lifecycle path**:
 cancellation, retryable and non-retryable errors, and the per-pair
 circuit breaker. Same handler, several new failure modes.
 
-> Troubleshooting tips:
+> [!TIP]
+> Troubleshooting:
 >
 > - If TXN-B never blocks, your `run` method is probably returning
 >   `self._auto_result` for MEDIUM as well as LOW/HIGH. Re-read the
@@ -400,3 +406,14 @@ circuit breaker. Same handler, several new failure modes.
 > - If the validator never fires, verify it is a method named
 >   `validate_review` decorated with `@review.validator` (the name
 >   matches the Update method).
+
+> [!NOTE]
+> Knowledge check:
+>
+> - What does the Update validator give you that a plain Signal
+>   handler does not?
+> - Why is it safe for the `submit_review` sync handler to use
+>   `nexus.client()` directly when the same code in a workflow would
+>   not be allowed?
+> - What does `ReviewCallerWorkflow` give the reviewer that a raw
+>   client-side Update call would not?

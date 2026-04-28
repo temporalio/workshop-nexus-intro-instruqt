@@ -31,6 +31,11 @@ tabs:
   type: code
   hostname: workshop
   path: /root/workshop/exercises/04_caller_swap/exercise
+- id: kc5vcvy2qmty
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/04_caller_swap/solution
 - id: aom8xa3q3ndx
   title: Compliance Worker
   type: terminal
@@ -51,13 +56,9 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
-- title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/04_caller_swap/solution
 difficulty: intermediate
 timelimit: 1500
-enhanced_loading: null
+enhanced_loading: false
 ---
 
 # Chapter 4: Swap the Caller to Nexus
@@ -112,6 +113,10 @@ boundary.
   time across the Nexus boundary.
 - Inspect the Event History to confirm the two-event sync pattern
   (`NexusOperationScheduled`, `NexusOperationCompleted`).
+
+> [!TIP]
+> Stuck on a TODO? The **Solution** tab shows the finished file. Try
+> the exercise first, then peek if you need to.
 
 ## Step 1: Apply TODO 4 in `payments/workflows.py`
 
@@ -202,7 +207,7 @@ code.** Browse the file imports if you want to verify.
 ## Step 3: Start the Compliance Worker
 
 Click the
-[button label="Compliance Worker" background="#444CE7"](tab-1)
+[button label="Compliance Worker" background="#444CE7"](tab-2)
 terminal:
 
 ```bash,run
@@ -214,7 +219,7 @@ Same Worker as Chapter 3. Leave it running.
 ## Step 4: Start the Payments Worker
 
 Click the
-[button label="Payments Worker" background="#444CE7"](tab-2) terminal:
+[button label="Payments Worker" background="#444CE7"](tab-3) terminal:
 
 ```bash,run
 uv run python -m payments.worker
@@ -228,7 +233,7 @@ execute_payment` only.
 
 ## Step 5: Run the starter
 
-Click the [button label="Starter" background="#444CE7"](tab-3)
+Click the [button label="Starter" background="#444CE7"](tab-4)
 terminal:
 
 ```bash,run
@@ -238,6 +243,7 @@ uv run python -m payments.starter
 The same three results: TXN-A LOW, TXN-B MEDIUM with monitoring,
 TXN-C declined HIGH. **Same outcomes, different mechanism.**
 
+> [!NOTE]
 > TXN-B's MEDIUM auto-approval is still a property of the rule-based
 > sync handler we are calling. Chapter 6 turns the MEDIUM path into a
 > real human-in-the-loop review by replacing the sync handler with a
@@ -246,7 +252,7 @@ TXN-C declined HIGH. **Same outcomes, different mechanism.**
 ## Step 6: Inspect the Event History
 
 Click the
-[button label="Temporal UI" background="#444CE7"](tab-4) tab. Switch
+[button label="Temporal UI" background="#444CE7"](tab-5) tab. Switch
 to `payments-namespace` using the namespace selector. Open
 `payment-TXN-A` and look at the Event History.
 
@@ -297,3 +303,13 @@ return its handle. The caller's history grows a third event,
 `NexusOperationStarted`, and you get all the durability properties of
 a real workflow on the Compliance side, without the caller needing
 to know.
+
+> [!NOTE]
+> Knowledge check:
+>
+> - Why does the Nexus call drop the explicit `RetryPolicy` the
+>   activity call had?
+> - What information does the caller need to know about the handler's
+>   namespace or task queue?
+> - Which two events appear in the caller's history for a sync
+>   Operation, and which event is conspicuously absent?

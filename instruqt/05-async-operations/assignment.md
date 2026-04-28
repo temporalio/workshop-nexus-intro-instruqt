@@ -29,6 +29,11 @@ tabs:
   type: code
   hostname: workshop
   path: /root/workshop/exercises/05_async_operations/exercise
+- id: qsnxn5mpza5y
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/05_async_operations/solution
 - id: xix4nycyr38v
   title: Compliance Worker
   type: terminal
@@ -49,13 +54,9 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
-- title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/05_async_operations/solution
 difficulty: intermediate
 timelimit: 1500
-enhanced_loading: null
+enhanced_loading: false
 ---
 
 # Chapter 5: Async Operations Backed by a Workflow
@@ -105,6 +106,10 @@ workflow is small for now; Chapter 6 grows it to support human review.
   `start_to_close_timeout` to the caller.
 - Run the system end-to-end and observe the three-event async
   lifecycle in the Web UI.
+
+> [!TIP]
+> Stuck on a TODO? The **Solution** tab shows the finished file. Try
+> the exercise first, then peek if you need to.
 
 ## Step 1: Apply TODO 6 in `compliance/workflows.py`
 
@@ -235,7 +240,7 @@ hits the 10-second deadline before any of these expire.
 ## Step 5: Start the Compliance Worker
 
 Click the
-[button label="Compliance Worker" background="#444CE7"](tab-1)
+[button label="Compliance Worker" background="#444CE7"](tab-2)
 terminal:
 
 ```bash,run
@@ -253,7 +258,7 @@ The startup banner now shows three things registered:
 ## Step 6: Start the Payments Worker
 
 Click the
-[button label="Payments Worker" background="#444CE7"](tab-2) terminal:
+[button label="Payments Worker" background="#444CE7"](tab-3) terminal:
 
 ```bash,run
 uv run python -m payments.worker
@@ -264,7 +269,7 @@ in the workflow.
 
 ## Step 7: Run the starter
 
-Click the [button label="Starter" background="#444CE7"](tab-3)
+Click the [button label="Starter" background="#444CE7"](tab-4)
 terminal:
 
 ```bash,run
@@ -277,7 +282,7 @@ monitoring, TXN-C declined HIGH.
 ## Step 8: Inspect the async lifecycle in the Web UI
 
 Click the
-[button label="Temporal UI" background="#444CE7"](tab-4) tab. Switch
+[button label="Temporal UI" background="#444CE7"](tab-5) tab. Switch
 to `payments-namespace`. Open `payment-TXN-A` and look at the Event
 History.
 
@@ -337,3 +342,15 @@ MEDIUM-risk transactions block in a `wait_condition` until a human
 submits a review through a second Nexus Operation (`submit_review`),
 which is implemented as a Workflow Update. That is the moment the
 "Nexus + Updates" combo pays off.
+
+> [!NOTE]
+> Knowledge check:
+>
+> - What does `WorkflowIDConflictPolicy.USE_EXISTING` protect against,
+>   and which event in the caller's history would otherwise look
+>   wrong?
+> - Which of the three timeouts bounds the handler workflow's runtime,
+>   and which one bounds the time before a worker picks up the
+>   request?
+> - What is the third event the caller's history grows when the
+>   handler is workflow-backed?

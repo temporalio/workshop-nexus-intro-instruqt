@@ -31,6 +31,11 @@ tabs:
   type: code
   hostname: workshop
   path: /root/workshop/exercises/03_sync_handler/exercise
+- id: 5ykc0v9ysskv
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/03_sync_handler/solution
 - id: e7jjwc3fiqn3
   title: Compliance Worker
   type: terminal
@@ -51,13 +56,9 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
-- title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/03_sync_handler/solution
 difficulty: intermediate
 timelimit: 1800
-enhanced_loading: null
+enhanced_loading: false
 ---
 
 # Chapter 3: Implement the Sync Handler
@@ -109,6 +110,10 @@ The Payments Worker still uses its local `check_compliance` Activity
 because Chapter 4 has not happened yet. The Compliance Worker is up
 but nothing is calling it. That is expected. We are validating the
 plumbing, not the data flow.
+
+> [!TIP]
+> Stuck on a TODO? The **Solution** tab shows the finished file. Try
+> the exercise first, then peek if you need to.
 
 ## Step 1: Apply TODO 2 in `compliance/service_handler.py`
 
@@ -180,7 +185,7 @@ The Worker polls the `compliance-risk` task queue (set above by the
 ## Step 3: Start the Compliance Worker
 
 Click the
-[button label="Compliance Worker" background="#444CE7"](tab-1)
+[button label="Compliance Worker" background="#444CE7"](tab-2)
 terminal. Start the Worker:
 
 ```bash,run
@@ -207,7 +212,7 @@ Leave the Worker running.
 ## Step 4: Start the Payments Worker
 
 Click the
-[button label="Payments Worker" background="#444CE7"](tab-2) terminal.
+[button label="Payments Worker" background="#444CE7"](tab-3) terminal.
 Start the Payments Worker:
 
 ```bash,run
@@ -220,7 +225,7 @@ local `check_compliance` Activity. We swap that out in Chapter 4.
 
 ## Step 5: Run the starter
 
-Click the [button label="Starter" background="#444CE7"](tab-3)
+Click the [button label="Starter" background="#444CE7"](tab-4)
 terminal. Run the starter:
 
 ```bash,run
@@ -238,8 +243,9 @@ a Nexus participant, but no caller has been wired to it.
 
 ## Step 6: Confirm both Workers are healthy
 
-In the Web UI, click **Workers** in the left navigation. Switch
-namespaces with the selector at the top.
+Click the [button label="Temporal UI" background="#444CE7"](tab-5)
+tab. Click **Workers** in the left navigation. Switch namespaces with
+the selector at the top.
 
 - In `payments-namespace`, you should see one Worker polling
   `payments-processing` (the Payments Worker).
@@ -270,3 +276,13 @@ because the Payments side still uses a local Activity.
 In Chapter 4 you swap the Payments-side activity call for a Nexus call,
 and the two halves of the application start talking to each other
 across the namespace boundary for the first time.
+
+> [!NOTE]
+> Knowledge check:
+>
+> - Why does a sync handler not produce a workflow on the Compliance
+>   side, and what is the time budget that decision pays for?
+> - Which two decorators turn a plain class into a Nexus handler, and
+>   what does each one bind?
+> - What worker argument registers the handler so the worker becomes
+>   a participant in the Endpoint's task queue?
