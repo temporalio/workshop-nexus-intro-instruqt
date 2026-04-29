@@ -48,8 +48,6 @@ timelimit: 600
 enhanced_loading: false
 ---
 
-# Chapter 1: Run the Monolith
-
 Before you decouple anything, run the application as it ships today and
 feel where the seams are. This chapter is observation only. There is no
 code to edit.
@@ -60,7 +58,7 @@ code to edit.
 > From Chapter 2 on, the **Code Editor** opens the exercise and a
 > separate **Solution** tab shows the finished file.
 
-## Why this chapter exists
+## What You're Solving
 
 Every distributed-systems story has a "before" picture, and this is ours.
 
@@ -230,23 +228,7 @@ replace the Activity call with a **Nexus Operation** call: a typed
 remote-invocation primitive that runs in a different namespace, with a
 different worker, owned by a different team.
 
-## Step 4: Stop the Worker
-
-Back in the [button label="Worker" background="#444CE7"](tab-1)
-terminal, stop the Worker with `Ctrl+C` so it does not pollute the next
-chapter's task queue.
-
-```bash,run
-# Press Ctrl+C in the Worker terminal.
-```
-
-You can also stop it from the Starter terminal with:
-
-```bash,run
-pkill -f "payments.worker" || true
-```
-
-## Wrapping up
+## Key Takeaways
 
 In this chapter you ran the application as it exists before any Nexus
 work. Three transactions executed end-to-end through a single Worker
@@ -259,18 +241,3 @@ Python interface that the Payments and Compliance teams will share, and
 the Nexus Endpoint that will route calls between them. The contract
 itself is small, and Chapter 2 is largely about what it means and where
 it lives. The actual decoupling happens across Chapters 3 and 4.
-
-> [!NOTE]
-> Knowledge check (instructor-led in Live Event mode, self-check in
-> self-paced mode):
->
-> - The four Nexus building blocks are **Service**, **Operation**,
->   **Endpoint**, and **Registry**. Try to predict which of those you
->   will define in code, which on the server, and which by importing
->   shared types.
-> - The synchronous Nexus handler deadline is **10 seconds**. Anything
->   that needs more time runs as an asynchronous, workflow-backed
->   operation (Chapter 5).
-> - The asynchronous Schedule-to-Close ceiling on Temporal Cloud is
->   **60 days**. Plenty of room for a human-in-the-loop review
->   (Chapter 6).

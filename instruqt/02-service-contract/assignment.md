@@ -28,12 +28,7 @@ tabs:
   title: Code Editor
   type: code
   hostname: workshop
-  path: /root/workshop/exercises/02_service_contract/exercise
-- id: mkyu8fxrz4kn
-  title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/02_service_contract/solution
+  path: /root/workshop/exercises/02_service_contract/exercise/shared/service.py
 - id: ystkhevci7d2
   title: Terminal
   type: terminal
@@ -44,19 +39,22 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
+- id: mkyu8fxrz4kn
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/02_service_contract/solution
 difficulty: basic
 timelimit: 1200
 enhanced_loading: false
 ---
-
-# Chapter 2: Define the Nexus Service Contract
 
 In this chapter you define the shared Nexus Service contract between the
 Payments and Compliance teams, and stand up the routing infrastructure
 that will carry calls across the team boundary: a Nexus Endpoint that
 points callers at the Compliance team's task queue.
 
-## Why this chapter exists
+## What You're Solving
 
 Nexus exists so that two teams can call each other's Temporal code
 without sharing a codebase or a namespace. The mechanism that makes that
@@ -96,43 +94,52 @@ reads first when they want to call your Service.
 
 ## What you will do
 
-- Apply **TODO 1** to add `@nexusrpc.service` and the typed Operation
-  declarations to `shared/service.py`.
+- Apply **TODOs 1a–1c** to add `@nexusrpc.service` and the typed
+  Operation declarations to `shared/service.py`.
 - Verify the two namespaces exist.
 - Create the `compliance-endpoint` Nexus Endpoint with the Temporal
   CLI, attaching a Markdown description from `compliance-endpoint.md`.
 - Find the Endpoint in the Web UI and read its Markdown description.
 
-> [!TIP]
-> Stuck on a TODO? The **Solution** tab shows the finished file. Try
-> the exercise first, then peek if you need to.
+> [!NOTE]
+> Stuck on a TODO? The **Solution** tab (rightmost) shows the finished
+> file. Try the exercise first, then peek if you need to.
 
-## Step 1: Apply TODO 1 in `shared/service.py`
+## Step 1: Apply TODOs 1a–1c in `shared/service.py`
 
 Open `shared/service.py` in the
 [button label="Code Editor" background="#444CE7"](tab-0). The file
-contains a class `ComplianceNexusService` with a `pass` body and a
-TODO 1 comment.
+contains an empty `ComplianceNexusService` class with three TODO
+markers.
 
-Three changes:
+### TODO 1a: Decorate the class
 
-1. Add `@nexusrpc.service` directly above the `class
-   ComplianceNexusService:` line.
-2. Replace the TODO 1 comment with the typed `check_compliance`
-   Operation:
+Add `@nexusrpc.service` directly above the `class ComplianceNexusService:`
+line:
 
-   ```python
-   check_compliance: nexusrpc.Operation[ComplianceRequest, ComplianceResult]
-   ```
+```python
+@nexusrpc.service
+class ComplianceNexusService:
+```
 
-3. Add the typed `submit_review` Operation directly below it:
+### TODO 1b: Declare the `check_compliance` Operation
 
-   ```python
-   submit_review: nexusrpc.Operation[ReviewRequest, ComplianceResult]
-   ```
+Inside the class body, add the typed Operation:
 
-You can remove the `pass` line. The class no longer needs it once the
-operations are declared.
+```python
+check_compliance: nexusrpc.Operation[ComplianceRequest, ComplianceResult]
+```
+
+### TODO 1c: Declare the `submit_review` Operation
+
+Directly below it, add:
+
+```python
+submit_review: nexusrpc.Operation[ReviewRequest, ComplianceResult]
+```
+
+You can remove the `pass` line once both operations are declared. The
+class no longer needs it.
 
 After your edits, the relevant block should look like:
 
@@ -168,7 +175,7 @@ environment with separate workflows, separate task queues, and separate
 access control. **Nexus is the only thing that crosses the boundary.**
 
 Both namespaces were created for you when the track started. Verify
-they exist. In the [button label="Terminal" background="#444CE7"](tab-2):
+they exist. In the [button label="Terminal" background="#444CE7"](tab-1):
 
 ```bash,run
 temporal operator namespace list
@@ -214,7 +221,7 @@ The `get` output should include the Markdown description from
 
 ## Step 4: Find the Endpoint in the Web UI
 
-Click the [button label="Temporal UI" background="#444CE7"](tab-3)
+Click the [button label="Temporal UI" background="#444CE7"](tab-2)
 tab. In the left navigation, click **Nexus Endpoints** (or browse to
 `/nexus/endpoints` directly).
 
@@ -227,7 +234,7 @@ exposes before writing a caller workflow against it.**
 The Endpoint exists at the cluster level. It is not scoped to any one
 namespace. That is what lets it bridge teams.
 
-## Wrapping up
+## Key Takeaways
 
 You wrote the contract that the Payments and Compliance teams will
 share, and you registered the routing rule that the dev server will use
@@ -246,13 +253,3 @@ Compliance Worker that polls the `compliance-risk` task queue.
 > take. The contract has no UI surface; it lives only in the Python
 > files both teams import. The Endpoint is the matching server-side
 > artifact, plus a description that documents what the contract does.
-
-> [!NOTE]
-> Knowledge check (instructor-led in Live Event mode, self-check in
-> self-paced mode):
->
-> - Where does the Service contract live, and which packages import it?
-> - Which artifact does the Web UI show: the Service class, the
->   Endpoint, or both?
-> - If you change the contract, do you need to restart the dev server
->   or just the Workers that import it?

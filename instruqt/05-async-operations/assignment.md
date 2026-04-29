@@ -29,11 +29,6 @@ tabs:
   type: code
   hostname: workshop
   path: /root/workshop/exercises/05_async_operations/exercise
-- id: qsnxn5mpza5y
-  title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/05_async_operations/solution
 - id: xix4nycyr38v
   title: Compliance Worker
   type: terminal
@@ -54,12 +49,15 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
+- id: qsnxn5mpza5y
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/05_async_operations/solution
 difficulty: intermediate
 timelimit: 1500
 enhanced_loading: false
 ---
-
-# Chapter 5: Async Operations Backed by a Workflow
 
 The `check_compliance` handler currently fits in 10 seconds because the
 rule-based check is fast. It will not always be that simple. Real
@@ -67,7 +65,7 @@ compliance can take seconds to minutes (database lookups, third-party
 KYC APIs, manual review). Anything that can outlive a sync handler
 needs to be backed by a **workflow**. This chapter makes that change.
 
-## Why this chapter exists
+## What You're Solving
 
 A workflow-backed async Operation has a different shape from a sync
 Operation:
@@ -97,9 +95,10 @@ workflow is small for now; Chapter 6 grows it to support human review.
 ## What you will do
 
 - Apply **TODO 6** to implement `ComplianceWorkflow.run`.
-- Apply **TODO 7** to convert the `check_compliance` handler from
-  `@nexusrpc.handler.sync_operation` to
-  `@nexus.workflow_run_operation`.
+- Apply **TODOs 7a–7b** to convert the `check_compliance` handler
+  from `@nexusrpc.handler.sync_operation` to
+  `@nexus.workflow_run_operation` and remove the now-unused activity
+  import.
 - Apply **TODO 8** to register `ComplianceWorkflow` and the
   `check_compliance` Activity on the Compliance Worker.
 - Apply **TODO 9** to add `schedule_to_start_timeout` and
@@ -107,9 +106,9 @@ workflow is small for now; Chapter 6 grows it to support human review.
 - Run the system end-to-end and observe the three-event async
   lifecycle in the Web UI.
 
-> [!TIP]
-> Stuck on a TODO? The **Solution** tab shows the finished file. Try
-> the exercise first, then peek if you need to.
+> [!NOTE]
+> Stuck on a TODO? The **Solution** tab (rightmost) shows the finished
+> file. Try the exercise first, then peek if you need to.
 
 ## Step 1: Apply TODO 6 in `compliance/workflows.py`
 
@@ -140,11 +139,16 @@ Two notes:
   variable so Chapter 6 can extend this method with a MEDIUM-risk
   `wait_condition` without restructuring the whole `run` method.
 
-## Step 2: Apply TODO 7 in `compliance/service_handler.py`
+## Step 2: Apply TODOs 7a–7b in `compliance/service_handler.py`
 
-Open `compliance/service_handler.py`. Find the TODO 7 comment in the
-sync `check_compliance` method. Replace the entire method body with
-the async version:
+Open `compliance/service_handler.py`. Two TODO 7 markers — one above
+the `check_compliance` method (TODO 7a), and one above the now-unused
+import at the top (TODO 7b).
+
+### TODO 7a: Convert `check_compliance` to a workflow-run operation
+
+Replace the entire method (decorator, signature, and body) with the
+async version:
 
 ```python
 @nexus.workflow_run_operation
@@ -176,14 +180,16 @@ Three pieces:
 `submit_review` stays a `NotImplementedError` stub. Chapter 6 turns it
 into a real Update sender.
 
-Also delete the now-unused import at the top of the file:
+### TODO 7b: Delete the now-unused import
+
+The activity now runs inside `ComplianceWorkflow`, not the Nexus
+handler, so this alias is dead code:
 
 ```python
 from compliance.activities import check_compliance as _check_compliance
 ```
 
-The activity now runs inside `ComplianceWorkflow`, not the Nexus
-handler, so this alias is dead code.
+Delete that line.
 
 ## Step 3: Apply TODO 8 in `compliance/worker.py`
 
@@ -240,7 +246,7 @@ hits the 10-second deadline before any of these expire.
 ## Step 5: Start the Compliance Worker
 
 Click the
-[button label="Compliance Worker" background="#444CE7"](tab-2)
+[button label="Compliance Worker" background="#444CE7"](tab-1)
 terminal:
 
 ```bash,run
@@ -258,7 +264,7 @@ The startup banner now shows three things registered:
 ## Step 6: Start the Payments Worker
 
 Click the
-[button label="Payments Worker" background="#444CE7"](tab-3) terminal:
+[button label="Payments Worker" background="#444CE7"](tab-2) terminal:
 
 ```bash,run
 uv run python -m payments.worker
@@ -269,7 +275,7 @@ in the workflow.
 
 ## Step 7: Run the starter
 
-Click the [button label="Starter" background="#444CE7"](tab-4)
+Click the [button label="Starter" background="#444CE7"](tab-3)
 terminal:
 
 ```bash,run
@@ -282,7 +288,7 @@ monitoring, TXN-C declined HIGH.
 ## Step 8: Inspect the async lifecycle in the Web UI
 
 Click the
-[button label="Temporal UI" background="#444CE7"](tab-5) tab. Switch
+[button label="Temporal UI" background="#444CE7"](tab-4) tab. Switch
 to `payments-namespace`. Open `payment-TXN-A` and look at the Event
 History.
 
@@ -319,16 +325,7 @@ The handler workflows resume from where they stopped, the activities
 complete, and the Nexus operation reports Completed. The caller never
 notices the worker restart.
 
-## Step 10: Stop both Workers
-
-Press `Ctrl+C` in both Worker terminals, or:
-
-```bash,run
-pkill -f "compliance.worker" || true
-pkill -f "payments.worker"   || true
-```
-
-## Wrapping up
+## Key Takeaways
 
 You converted `check_compliance` from a sync handler to a
 workflow-backed async handler. The caller's history grew the
@@ -342,15 +339,3 @@ MEDIUM-risk transactions block in a `wait_condition` until a human
 submits a review through a second Nexus Operation (`submit_review`),
 which is implemented as a Workflow Update. That is the moment the
 "Nexus + Updates" combo pays off.
-
-> [!NOTE]
-> Knowledge check:
->
-> - What does `WorkflowIDConflictPolicy.USE_EXISTING` protect against,
->   and which event in the caller's history would otherwise look
->   wrong?
-> - Which of the three timeouts bounds the handler workflow's runtime,
->   and which one bounds the time before a worker picks up the
->   request?
-> - What is the third event the caller's history grows when the
->   handler is workflow-backed?

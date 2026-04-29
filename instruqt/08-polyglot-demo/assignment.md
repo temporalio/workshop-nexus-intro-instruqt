@@ -53,8 +53,6 @@ timelimit: 600
 enhanced_loading: false
 ---
 
-# Chapter 8: Polyglot Connector Demo
-
 This chapter has no TODOs. The Java Compliance Worker has been
 pre-built and is sitting at `/root/workshop/polyglot/java-legacy/`.
 You will start it on the **same** `compliance-risk` task queue the
@@ -66,7 +64,7 @@ the Java handler fulfill the same Nexus contract.
 > exercise to solve. The **Code Editor** opens the finished Java
 > implementation directly.
 
-## Why this chapter exists
+## What You're Solving
 
 The Service contract you wrote in Chapter 2 is a typed Python class.
 Decorators on it (`@nexusrpc.service`,
@@ -240,16 +238,7 @@ shows the same three events the pure-Python Chapter 5 run produced:
 order. The bytes are written by Java code on the handler side, but
 the caller cannot tell.
 
-## Step 6: Stop both Workers
-
-Press `Ctrl+C` in both Worker terminals, or:
-
-```bash,run
-pkill -f "payments.worker"     || true
-pkill -f "ComplianceWorkerApp" || true
-```
-
-## Wrapping up
+## Key Takeaways
 
 That is the workshop. You built a Nexus Service contract in Python,
 implemented it as a sync handler, swapped the caller, made it async
@@ -263,27 +252,5 @@ namespaces, blast radius, and **languages**. Whether the handler is
 Python today and Java tomorrow (or the reverse) is a decision the
 Compliance team can make on their own.
 
-> [!TIP]
-> Where to go next:
->
-> - The Temporal docs on Nexus:
->   `https://docs.temporal.io/nexus`.
-> - The Python Nexus tutorial on learn.temporal.io.
-> - The `samples-python/nexus_*` directories for additional patterns:
->   the in-workflow cancellation pattern (`asyncio.create_task` +
->   `task.cancel()`), worker-side cleanup with `asyncio.shield`, and
->   more.
-> - For polyglot work: the `samples-java/.../nexus/` directory for
->   how the Java side declares the same contract with explicit
->   `@Operation(name=...)` and `@JsonProperty(...)` annotations.
-
-> [!NOTE]
-> Knowledge check:
->
-> - Why does the Java handler need `@Operation(name = "...")` and
->   `@JsonProperty(...)` annotations to be call-compatible with a
->   Python-authored contract?
-> - The Endpoint, namespace, and task queue are all unchanged. Which
->   artifact actually changed when you swapped Python for Java?
-> - What would have to be true on the wire for a third-language
->   handler (say, Go) to drop in next?
+The next chapter is a wrap-up resource page with links and references
+for going deeper on Nexus.

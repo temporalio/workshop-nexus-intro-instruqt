@@ -31,11 +31,6 @@ tabs:
   type: code
   hostname: workshop
   path: /root/workshop/exercises/03_sync_handler/exercise
-- id: 5ykc0v9ysskv
-  title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/03_sync_handler/solution
 - id: e7jjwc3fiqn3
   title: Compliance Worker
   type: terminal
@@ -56,12 +51,15 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
+- id: 5ykc0v9ysskv
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/03_sync_handler/solution
 difficulty: intermediate
 timelimit: 1800
 enhanced_loading: false
 ---
-
-# Chapter 3: Implement the Sync Handler
 
 Now you write the Compliance side. By the end of the chapter the
 Compliance Worker will be running in `compliance-namespace`, polling
@@ -69,7 +67,7 @@ the `compliance-risk` task queue, with a registered handler for the
 `check_compliance` Nexus Operation. Payments is unchanged; it still
 calls a local Activity.
 
-## Why this chapter exists
+## What You're Solving
 
 A Nexus Operation has two sides: the **caller** (the workflow that
 invokes the Operation) and the **handler** (the code that fulfills it).
@@ -99,8 +97,8 @@ the typed input and returns the typed output.
 
 ## What you will do
 
-- Apply **TODO 2** to decorate `ComplianceNexusServiceHandler` and
-  implement the `check_compliance` and `submit_review` methods.
+- Apply **TODOs 2a–2c** to decorate `ComplianceNexusServiceHandler`
+  and implement the `check_compliance` and `submit_review` methods.
 - Apply **TODO 3** to register the handler on the Compliance Worker.
 - Start the Compliance Worker in `compliance-namespace`.
 - Start the Payments Worker (still the monolith from Chapter 1).
@@ -111,53 +109,56 @@ because Chapter 4 has not happened yet. The Compliance Worker is up
 but nothing is calling it. That is expected. We are validating the
 plumbing, not the data flow.
 
-> [!TIP]
-> Stuck on a TODO? The **Solution** tab shows the finished file. Try
-> the exercise first, then peek if you need to.
+> [!NOTE]
+> Stuck on a TODO? The **Solution** tab (rightmost) shows the finished
+> file. Try the exercise first, then peek if you need to.
 
-## Step 1: Apply TODO 2 in `compliance/service_handler.py`
+## Step 1: Apply TODOs 2a–2c in `compliance/service_handler.py`
 
 Open `compliance/service_handler.py` in the
 [button label="Code Editor" background="#444CE7"](tab-0). The file
-contains a class `ComplianceNexusServiceHandler` with two methods that
-return `None`.
+contains a `ComplianceNexusServiceHandler` class with two `pass`-bodied
+methods and three TODO markers.
 
-Three changes:
+### TODO 2a: Bind the class to the Service contract
 
-1. Add the service-handler decorator above the class:
+Add the service-handler decorator directly above the class:
 
-   ```python
-   @nexusrpc.handler.service_handler(service=ComplianceNexusService)
-   class ComplianceNexusServiceHandler:
-       ...
-   ```
+```python
+@nexusrpc.handler.service_handler(service=ComplianceNexusService)
+class ComplianceNexusServiceHandler:
+    ...
+```
 
-2. Decorate `check_compliance` with `@nexusrpc.handler.sync_operation`
-   and replace the `return None` body with a call to the rule-based
-   check:
+### TODO 2b: Implement `check_compliance`
 
-   ```python
-   @nexusrpc.handler.sync_operation
-   async def check_compliance(
-       self, ctx: nexusrpc.handler.StartOperationContext, input: ComplianceRequest
-   ) -> ComplianceResult:
-       return _check_compliance(input)
-   ```
+Decorate `check_compliance` with `@nexusrpc.handler.sync_operation` and
+replace the `pass` body with a call to the rule-based check:
 
-3. Decorate `submit_review` with `@nexusrpc.handler.sync_operation`
-   and replace its body with a `NotImplementedError` stub. The real
-   implementation arrives in Chapter 6:
+```python
+@nexusrpc.handler.sync_operation
+async def check_compliance(
+    self, ctx: nexusrpc.handler.StartOperationContext, input: ComplianceRequest
+) -> ComplianceResult:
+    return _check_compliance(input)
+```
 
-   ```python
-   @nexusrpc.handler.sync_operation
-   async def submit_review(
-       self, ctx: nexusrpc.handler.StartOperationContext, input: ReviewRequest
-   ) -> ComplianceResult:
-       raise NotImplementedError(
-           "submit_review needs a workflow to send Updates to "
-           "(introduced in Ch 5; implemented in Ch 6)"
-       )
-   ```
+### TODO 2c: Stub `submit_review`
+
+Decorate `submit_review` with `@nexusrpc.handler.sync_operation` and
+replace the `pass` body with a `NotImplementedError` stub. The real
+implementation arrives in Chapter 6:
+
+```python
+@nexusrpc.handler.sync_operation
+async def submit_review(
+    self, ctx: nexusrpc.handler.StartOperationContext, input: ReviewRequest
+) -> ComplianceResult:
+    raise NotImplementedError(
+        "submit_review needs a workflow to send Updates to "
+        "(introduced in Ch 5; implemented in Ch 6)"
+    )
+```
 
 Both methods are async and take a `StartOperationContext` plus a typed
 input. The return type matches the Operation declaration in the
@@ -185,7 +186,7 @@ The Worker polls the `compliance-risk` task queue (set above by the
 ## Step 3: Start the Compliance Worker
 
 Click the
-[button label="Compliance Worker" background="#444CE7"](tab-2)
+[button label="Compliance Worker" background="#444CE7"](tab-1)
 terminal. Start the Worker:
 
 ```bash,run
@@ -212,7 +213,7 @@ Leave the Worker running.
 ## Step 4: Start the Payments Worker
 
 Click the
-[button label="Payments Worker" background="#444CE7"](tab-3) terminal.
+[button label="Payments Worker" background="#444CE7"](tab-2) terminal.
 Start the Payments Worker:
 
 ```bash,run
@@ -225,7 +226,7 @@ local `check_compliance` Activity. We swap that out in Chapter 4.
 
 ## Step 5: Run the starter
 
-Click the [button label="Starter" background="#444CE7"](tab-4)
+Click the [button label="Starter" background="#444CE7"](tab-3)
 terminal. Run the starter:
 
 ```bash,run
@@ -243,7 +244,7 @@ a Nexus participant, but no caller has been wired to it.
 
 ## Step 6: Confirm both Workers are healthy
 
-Click the [button label="Temporal UI" background="#444CE7"](tab-5)
+Click the [button label="Temporal UI" background="#444CE7"](tab-4)
 tab. Click **Workers** in the left navigation. Switch namespaces with
 the selector at the top.
 
@@ -254,18 +255,7 @@ the selector at the top.
 
 Both Workers are alive. Chapter 4 connects them.
 
-## Step 7: Stop both Workers
-
-Press `Ctrl+C` in both Worker terminals (or use the cleanup at the
-end of the challenge). You can also stop them from the Starter
-terminal:
-
-```bash,run
-pkill -f "compliance.worker" || true
-pkill -f "payments.worker"   || true
-```
-
-## Wrapping up
+## Key Takeaways
 
 You wrote the synchronous handler that fulfills the `check_compliance`
 contract, and you stood up a brand new Compliance Worker to serve it.
@@ -276,13 +266,3 @@ because the Payments side still uses a local Activity.
 In Chapter 4 you swap the Payments-side activity call for a Nexus call,
 and the two halves of the application start talking to each other
 across the namespace boundary for the first time.
-
-> [!NOTE]
-> Knowledge check:
->
-> - Why does a sync handler not produce a workflow on the Compliance
->   side, and what is the time budget that decision pays for?
-> - Which two decorators turn a plain class into a Nexus handler, and
->   what does each one bind?
-> - What worker argument registers the handler so the worker becomes
->   a participant in the Endpoint's task queue?

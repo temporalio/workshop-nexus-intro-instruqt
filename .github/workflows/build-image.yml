@@ -41,11 +41,13 @@ jobs:
 
       - name: Compute image tags
         id: tags
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "extra=${{ env.IMAGE }}:latest" >> "$GITHUB_OUTPUT"
+          if [ "$REF_NAME" = "main" ]; then
+            echo "extra=${IMAGE}:latest" >> "$GITHUB_OUTPUT"
           else
-            echo "extra=${{ env.IMAGE }}:${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "extra=${IMAGE}:${REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: docker/build-push-action@v6

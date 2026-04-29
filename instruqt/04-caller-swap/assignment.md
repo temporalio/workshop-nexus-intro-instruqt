@@ -31,11 +31,6 @@ tabs:
   type: code
   hostname: workshop
   path: /root/workshop/exercises/04_caller_swap/exercise
-- id: kc5vcvy2qmty
-  title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/04_caller_swap/solution
 - id: aom8xa3q3ndx
   title: Compliance Worker
   type: terminal
@@ -56,19 +51,22 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
+- id: kc5vcvy2qmty
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/04_caller_swap/solution
 difficulty: intermediate
 timelimit: 1500
 enhanced_loading: false
 ---
-
-# Chapter 4: Swap the Caller to Nexus
 
 This is the moment the application stops being a monolith. The
 Payments Workflow stops calling a local Activity for compliance and
 starts calling the Compliance team's Nexus Operation instead. Once
 that swap lands, no Compliance code runs in the Payments Worker.
 
-## Why this chapter exists
+## What You're Solving
 
 Chapter 3 stood up the Compliance handler. Chapter 2 created the
 Endpoint. Both halves of the routing infrastructure exist. What is
@@ -103,10 +101,10 @@ boundary.
 
 ## What you will do
 
-- Apply **TODO 4** to swap the activity call for a Nexus call in
-  `payments/workflows.py`.
-- Apply **TODO 5** to drop `check_compliance` from the Payments
-  Worker's Activities list and remove the import.
+- Apply **TODOs 4a–4b** to swap the activity call for a Nexus call in
+  `payments/workflows.py` and remove the now-unused activity import.
+- Apply **TODOs 5a–5b** to drop `check_compliance` from the Payments
+  Worker's Activities list and remove the now-unused import.
 - Start the Compliance Worker (no changes from Chapter 3).
 - Start the Payments Worker.
 - Run the starter and watch the same three transactions flow, this
@@ -114,31 +112,21 @@ boundary.
 - Inspect the Event History to confirm the two-event sync pattern
   (`NexusOperationScheduled`, `NexusOperationCompleted`).
 
-> [!TIP]
-> Stuck on a TODO? The **Solution** tab shows the finished file. Try
-> the exercise first, then peek if you need to.
+> [!NOTE]
+> Stuck on a TODO? The **Solution** tab (rightmost) shows the finished
+> file. Try the exercise first, then peek if you need to.
 
-## Step 1: Apply TODO 4 in `payments/workflows.py`
+## Step 1: Apply TODOs 4a–4b in `payments/workflows.py`
 
 Open `payments/workflows.py` in the
-[button label="Code Editor" background="#444CE7"](tab-0). Find the
-TODO 4 comment block. The current code calls compliance as an
-Activity:
+[button label="Code Editor" background="#444CE7"](tab-0). Two TODO 4
+markers — one above the `check_compliance` import (TODO 4a), and one
+above the existing activity call (TODO 4b).
 
-```python
-# TODO 4: Replace this activity call with a Nexus call.
-compliance: ComplianceResult = await workflow.execute_activity(
-    check_compliance,
-    comp_req,
-    start_to_close_timeout=timedelta(seconds=30),
-    retry_policy=RetryPolicy(
-        initial_interval=timedelta(seconds=1),
-        backoff_coefficient=2,
-    ),
-)
-```
+### TODO 4b: Replace the activity call with a Nexus call
 
-Replace that whole block with the Nexus call:
+The current code calls compliance as an Activity. Replace the entire
+block with a Nexus call:
 
 ```python
 nexus_client = workflow.create_nexus_client(
@@ -168,38 +156,38 @@ Two things to notice:
   `start_to_close`) that matter once the handler runs as a workflow.
   Chapter 5 adds them.
 
-Also remove the now-unused `check_compliance` import from the top of
-the file. Your editor or `ruff` will flag it.
+### TODO 4a: Remove the unused activity import
 
-## Step 2: Apply TODO 5 in `payments/worker.py`
-
-Open `payments/worker.py`. Find the TODO 5 comment in the Activities
-list:
+After TODO 4b, the file no longer references `check_compliance`
+directly. Delete the line:
 
 ```python
-worker = Worker(
-    client,
-    task_queue=TASK_QUEUE,
-    workflows=[PaymentProcessingWorkflow],
-    # TODO 5: Remove check_compliance from the activities list and the import above.
-    activities=[validate_payment, execute_payment, check_compliance],
-    activity_executor=executor,
-)
+from compliance.activities import check_compliance
 ```
 
-Two cleanups:
+Your editor or `ruff` will flag it as unused if you forget.
 
-1. Remove `check_compliance` from the `activities` list, leaving:
+## Step 2: Apply TODOs 5a–5b in `payments/worker.py`
 
-   ```python
-   activities=[validate_payment, execute_payment],
-   ```
+Open `payments/worker.py`. Find the two TODO 5 markers — one above the
+`from compliance.activities import check_compliance` line, and one
+above the `activities=[...]` line.
 
-2. Remove the corresponding import at the top of the file:
+### TODO 5a: Remove the import
 
-   ```python
-   from compliance.activities import check_compliance
-   ```
+At the top of the file, delete this line:
+
+```python
+from compliance.activities import check_compliance
+```
+
+### TODO 5b: Remove from the Activities list
+
+Inside the `Worker(...)` call, drop `check_compliance` from the list:
+
+```python
+activities=[validate_payment, execute_payment],
+```
 
 After this, **the Payments Worker no longer imports any Compliance
 code.** Browse the file imports if you want to verify.
@@ -207,7 +195,7 @@ code.** Browse the file imports if you want to verify.
 ## Step 3: Start the Compliance Worker
 
 Click the
-[button label="Compliance Worker" background="#444CE7"](tab-2)
+[button label="Compliance Worker" background="#444CE7"](tab-1)
 terminal:
 
 ```bash,run
@@ -219,7 +207,7 @@ Same Worker as Chapter 3. Leave it running.
 ## Step 4: Start the Payments Worker
 
 Click the
-[button label="Payments Worker" background="#444CE7"](tab-3) terminal:
+[button label="Payments Worker" background="#444CE7"](tab-2) terminal:
 
 ```bash,run
 uv run python -m payments.worker
@@ -233,7 +221,7 @@ execute_payment` only.
 
 ## Step 5: Run the starter
 
-Click the [button label="Starter" background="#444CE7"](tab-4)
+Click the [button label="Starter" background="#444CE7"](tab-3)
 terminal:
 
 ```bash,run
@@ -252,7 +240,7 @@ TXN-C declined HIGH. **Same outcomes, different mechanism.**
 ## Step 6: Inspect the Event History
 
 Click the
-[button label="Temporal UI" background="#444CE7"](tab-5) tab. Switch
+[button label="Temporal UI" background="#444CE7"](tab-4) tab. Switch
 to `payments-namespace` using the namespace selector. Open
 `payment-TXN-A` and look at the Event History.
 
@@ -276,16 +264,7 @@ the Endpoint, and the namespace boundary, **without** paying for a
 second workflow. For short interactions, that is exactly what you
 want.
 
-## Step 7: Stop both Workers
-
-Press `Ctrl+C` in both Worker terminals, or:
-
-```bash,run
-pkill -f "compliance.worker" || true
-pkill -f "payments.worker"   || true
-```
-
-## Wrapping up
+## Key Takeaways
 
 This was the structural pivot of the workshop. Before this chapter,
 Compliance and Payments were one process. After this chapter, they
@@ -303,13 +282,3 @@ return its handle. The caller's history grows a third event,
 `NexusOperationStarted`, and you get all the durability properties of
 a real workflow on the Compliance side, without the caller needing
 to know.
-
-> [!NOTE]
-> Knowledge check:
->
-> - Why does the Nexus call drop the explicit `RetryPolicy` the
->   activity call had?
-> - What information does the caller need to know about the handler's
->   namespace or task queue?
-> - Which two events appear in the caller's history for a sync
->   Operation, and which event is conspicuously absent?

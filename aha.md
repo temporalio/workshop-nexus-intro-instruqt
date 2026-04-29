@@ -44,7 +44,7 @@ For each chapter, the presenter:
 
 ## Slide-by-slide integration guide
 
-### Welcome block (Slides 1 to 5), maps to course-plan Welcome (9:00 to 9:05)
+### Welcome block (Slides 1 to 4), maps to course-plan Welcome (9:00 to 9:05)
 
 | # | Type | Title / Prompt | When to trigger |
 | :- | :--- | :------------- | :-------------- |
@@ -52,7 +52,7 @@ For each chapter, the presenter:
 | 2 | Word cloud | "One word for cross-team Temporal integration today." | First interactive moment. Sets the room. Read 3 to 5 responses out loud and riff. |
 | 3 | Scale (1 to 5) | "How comfortable are you with Temporal Workflows, Activities, and Updates?" | Lets the presenter calibrate pace. If average is below 3, slow down on the first chapter. |
 | 4 | Poll | "Have you ever wrapped a teammate's Workflow in an HTTP API?" | Run after the "why are we here" framing. The "yes, and it broke" responses are gold for the cross-team pain hook. |
-| 5 | Spinner wheel | "Pattern Roulette: 8 scenarios, defend your choice." | Optional crowd activity. Spin 2 or 3 times, ask volunteers to defend their pick. Pure energy moment, not graded. |
+| ~~5~~ | ~~Spinner wheel~~ | ~~"Pattern Roulette"~~ | **Skipped during presentation.** Slide remains in the editor (id 150153117) but `skip_when_presenting=True`. Slide numbering downstream is unchanged. |
 
 ### Chapter 1 graded checkpoint (Slides 6 to 12), maps to course-plan Activity 1.4 (Comp 1 Performance Assessment)
 

@@ -33,11 +33,6 @@ tabs:
   type: code
   hostname: workshop
   path: /root/workshop/exercises/07_lifecycle/exercise
-- id: rsans7ikp6kx
-  title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/07_lifecycle/solution
 - id: jju6cnunjt9k
   title: Compliance Worker
   type: terminal
@@ -63,12 +58,15 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
+- id: rsans7ikp6kx
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/07_lifecycle/solution
 difficulty: advanced
 timelimit: 1500
 enhanced_loading: false
 ---
-
-# Chapter 7: Cancellation, Errors, and the Circuit Breaker
 
 Up to now you have only seen the happy path. This chapter stress-tests
 the system: what happens when the handler raises a non-retryable
@@ -78,7 +76,7 @@ breaker trips. The behavior of each is the visible payoff for using
 Nexus instead of HTTP-wrapped activities; the platform handles all of
 this for you.
 
-## Why this chapter exists
+## What You're Solving
 
 Nexus errors split into two kinds:
 
@@ -106,27 +104,46 @@ breaker closes; fail it and the breaker reopens for another 60.
 
 ## What you will do
 
-- Apply **TODO 13** to add failure-injection branches to the
-  `check_compliance` handler. Specific transaction-id prefixes
-  (`TXN-FAIL-NONRETRY-*`, `TXN-FAIL-RETRY-*`, `TXN-CIRCUIT-*`) raise
-  matching errors before the workflow starts. Normal transactions
-  (TXN-A, TXN-B, TXN-C) and the cancellation case (`TXN-CANCEL-*`)
-  flow through unchanged.
+- Apply **TODOs 13a–13b** to add the top-level `nexusrpc` import and
+  failure-injection branches to the `check_compliance` handler.
+  Specific transaction-id prefixes (`TXN-FAIL-NONRETRY-*`,
+  `TXN-FAIL-RETRY-*`, `TXN-CIRCUIT-*`) raise matching errors before
+  the workflow starts. Normal transactions (TXN-A, TXN-B, TXN-C) and
+  the cancellation case (`TXN-CANCEL-*`) flow through unchanged.
 - Run the pre-supplied lifecycle starter that exercises four
   scenarios end-to-end.
 - Use the Temporal UI and the `temporal workflow describe` CLI to
   observe each scenario.
 
-> [!TIP]
-> Stuck on the failure-injection branches? The **Solution** tab shows
-> the finished file. Try the exercise first, then peek if you need to.
+> [!NOTE]
+> Stuck on the failure-injection branches? The **Solution** tab
+> (rightmost) shows the finished file. Try the exercise first, then
+> peek if you need to.
 
-## Step 1: Apply TODO 13 in `compliance/service_handler.py`
+## Step 1: Apply TODOs 13a–13b in `compliance/service_handler.py`
 
 Open `compliance/service_handler.py` in the
-[button label="Code Editor" background="#444CE7"](tab-0). Find the
-TODO 13 comment inside `check_compliance`, before the
-`ctx.start_workflow` call. Add the failure branches:
+[button label="Code Editor" background="#444CE7"](tab-0). Two TODO 13
+markers — one near the top of the file (TODO 13a), and one inside the
+`check_compliance` body before `ctx.start_workflow` (TODO 13b).
+
+### TODO 13a: Add the top-level `nexusrpc` import
+
+Above the existing `import nexusrpc.handler` line, add:
+
+```python
+import nexusrpc
+```
+
+`import nexusrpc.handler` binds the name implicitly, but listing the
+top-level package explicitly makes the imports self-documenting and
+gives the next step access to `nexusrpc.OperationError` and
+`nexusrpc.HandlerError`.
+
+### TODO 13b: Add the failure-injection branches
+
+Inside `check_compliance`, replace the TODO 13b marker with three
+prefix-matched branches before `ctx.start_workflow`:
 
 ```python
 @nexus.workflow_run_operation
@@ -154,17 +171,13 @@ async def check_compliance(
     )
 ```
 
-Also add `import nexusrpc` at the top of the file. (`import
-nexusrpc.handler` already binds the name implicitly, but listing the
-top-level package explicitly makes the imports self-documenting.)
-
 The branches are mutually exclusive with the normal `start_workflow`
 path. A normal transaction never matches a prefix and runs as before.
 
 ## Step 2: Start the Compliance Worker
 
 Click the
-[button label="Compliance Worker" background="#444CE7"](tab-2)
+[button label="Compliance Worker" background="#444CE7"](tab-1)
 terminal:
 
 ```bash,run
@@ -174,7 +187,7 @@ uv run python -m compliance.worker
 ## Step 3: Start the Payments Worker
 
 Click the
-[button label="Payments Worker" background="#444CE7"](tab-3) terminal:
+[button label="Payments Worker" background="#444CE7"](tab-2) terminal:
 
 ```bash,run
 uv run python -m payments.worker
@@ -183,7 +196,7 @@ uv run python -m payments.worker
 ## Step 4: Run the lifecycle starter
 
 Click the
-[button label="Lifecycle Starter" background="#444CE7"](tab-4)
+[button label="Lifecycle Starter" background="#444CE7"](tab-3)
 terminal. Run the pre-supplied starter:
 
 ```bash,run
@@ -225,7 +238,7 @@ The four scenarios:
 
 ## Step 5: Inspect each scenario
 
-Click the [button label="Inspector" background="#444CE7"](tab-5)
+Click the [button label="Inspector" background="#444CE7"](tab-4)
 terminal. Use it to run `temporal workflow describe` and `temporal
 workflow show` against the workflows the starter is touching.
 
@@ -315,18 +328,11 @@ in this demo, since every TXN-CIRCUIT- transaction still fails),
 the breaker closes again.
 
 Switch to the
-[button label="Temporal UI" background="#444CE7"](tab-6) tab and
+[button label="Temporal UI" background="#444CE7"](tab-5) tab and
 browse `payments-namespace`. The blocked workflows render with the
 same banner.
 
-## Step 6: Stop both Workers
-
-```bash,run
-pkill -f "compliance.worker" || true
-pkill -f "payments.worker"   || true
-```
-
-## Wrapping up
+## Key Takeaways
 
 You exercised every off-happy-path mode of a Nexus Operation. Errors
 split into retryable and non-retryable. Cancellation propagates
@@ -351,14 +357,3 @@ different language.
 >   same namespace.
 > - Cancellation type defaults to `WAIT_COMPLETED`. Use lighter
 >   modes when you cannot afford to wait for handler cleanup.
-
-> [!NOTE]
-> Knowledge check:
->
-> - Which `HandlerErrorType` values are retryable, and which mark the
->   operation as permanently failed?
-> - Why does cancellation propagate from a caller workflow to a
->   handler workflow without any cancel-forwarding code on your side?
-> - The circuit breaker opens after how many consecutive retryable
->   failures, and on which scope (per-Operation, per-Endpoint,
->   per-(Namespace, Endpoint) pair)?

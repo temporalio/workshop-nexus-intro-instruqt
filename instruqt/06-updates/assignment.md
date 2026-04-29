@@ -33,11 +33,6 @@ tabs:
   type: code
   hostname: workshop
   path: /root/workshop/exercises/06_updates/exercise
-- id: b5tctfffthpr
-  title: Solution
-  type: code
-  hostname: workshop
-  path: /root/workshop/exercises/06_updates/solution
 - id: up4gg2xd1exm
   title: Compliance Worker
   type: terminal
@@ -63,12 +58,15 @@ tabs:
   type: service
   hostname: workshop
   port: 8233
+- id: b5tctfffthpr
+  title: Solution
+  type: code
+  hostname: workshop
+  path: /root/workshop/exercises/06_updates/solution
 difficulty: advanced
 timelimit: 1800
 enhanced_loading: false
 ---
-
-# Chapter 6: Updates Through Nexus
 
 This chapter gives the Compliance team a real human-in-the-loop
 review path. MEDIUM-risk transactions stop being auto-approved and
@@ -76,7 +74,7 @@ start blocking until a human submits a decision. The mechanism is a
 **Workflow Update**, exposed across the Nexus boundary by reusing the
 `submit_review` Operation that has been a stub since Chapter 3.
 
-## Why this chapter exists
+## What You're Solving
 
 So far MEDIUM-risk transactions auto-approve with an "AML
 monitoring" note. That is fine for a demo but not for production. The
@@ -103,26 +101,31 @@ A pre-supplied `payments/review_starter.py` script kicks off a
 
 ## What you will do
 
-- Apply **TODO 10** to add the review path to `ComplianceWorkflow`:
-  `_review_result` state, the MEDIUM-risk branch in `run`, the
-  `@workflow.update review` handler, and the `@review.validator`.
-- Apply **TODO 11** to replace the `NotImplementedError` stub in
-  `submit_review` with a real Update sender.
-- Apply **TODO 12** to add `ReviewCallerWorkflow` and register it on
-  the Payments Worker.
+- Apply **TODOs 10a–10c** to add the review path to
+  `ComplianceWorkflow`: `_review_result` state, the MEDIUM-risk branch
+  in `run`, the `@workflow.update review` handler, and the
+  `@review.validator`.
+- Apply **TODOs 11a–11b** to replace the stub in `submit_review` with
+  a real Update sender and add the supporting `WorkflowHandle` import.
+- Apply **TODOs 12a–12d** to add `ReviewCallerWorkflow` and register
+  it on the Payments Worker.
 - Run the starter, watch TXN-B block, run the review starter, watch
   TXN-B unblock and complete.
 
-> [!TIP]
-> Stuck on a TODO? The **Solution** tab shows the finished file. Try
-> the exercise first, then peek if you need to.
+> [!NOTE]
+> Stuck on a TODO? The **Solution** tab (rightmost) shows the finished
+> file. Try the exercise first, then peek if you need to.
 
-## Step 1: Apply TODO 10 in `compliance/workflows.py`
+## Step 1: Apply TODOs 10a–10c in `compliance/workflows.py`
 
 Open `compliance/workflows.py` in the
-[button label="Code Editor" background="#444CE7"](tab-0). Three edits.
+[button label="Code Editor" background="#444CE7"](tab-0). Three TODO 10
+markers in the file: one inside `__init__`, one inside `run`, and one
+below `run`.
 
-### 1a. Add review state in `__init__`
+### TODO 10a: Add review state in `__init__`
+
+Add a third instance variable for the reviewer's outcome:
 
 ```python
 def __init__(self) -> None:
@@ -131,10 +134,10 @@ def __init__(self) -> None:
     self._review_result: ComplianceResult | None = None
 ```
 
-### 1b. Branch `run` on risk level
+### TODO 10b: Branch `run` on risk level
 
-Replace the existing `run` body so LOW and HIGH return immediately,
-and MEDIUM sleeps then waits:
+Replace the `pass` placeholder at the TODO 10b marker with branching:
+LOW and HIGH return immediately, MEDIUM sleeps then waits.
 
 ```python
 @workflow.run
@@ -158,7 +161,7 @@ The `sleep(10)` is for the durability demo: it gives you a chance to
 kill and restart the Compliance Worker mid-pause and watch the
 workflow resume.
 
-### 1c. Add the Update handler and validator
+### TODO 10c: Add the Update handler and validator
 
 Below `run`, add:
 
@@ -188,11 +191,25 @@ validator runs synchronously in the workflow context before the
 Update is accepted. If it raises, the Update is rejected and the
 workflow state is unchanged.
 
-## Step 2: Apply TODO 11 in `compliance/service_handler.py`
+## Step 2: Apply TODOs 11a–11b in `compliance/service_handler.py`
 
-Open `compliance/service_handler.py`. Find the
-`NotImplementedError` body inside `submit_review`. Replace it with the
-real implementation:
+Open `compliance/service_handler.py`. Two TODO 11 markers — one above
+the imports (TODO 11a), and one inside the `submit_review` body
+(TODO 11b).
+
+### TODO 11a: Add the `WorkflowHandle` import
+
+The Update sender you write next references `WorkflowHandle` for type
+clarity. Add this near the other `temporalio` imports at the top of
+the file:
+
+```python
+from temporalio.client import WorkflowHandle
+```
+
+### TODO 11b: Implement `submit_review`
+
+Replace the `pass` body with the real Update sender:
 
 ```python
 client = nexus.client()
@@ -204,12 +221,6 @@ return await handle.execute_update(
     ComplianceWorkflow.review,
     args=[input.approved, input.explanation],
 )
-```
-
-Add the import at the top of the file:
-
-```python
-from temporalio.client import WorkflowHandle
 ```
 
 What is going on:
@@ -234,16 +245,26 @@ The whole `submit_review` sync handler completes in well under 10
 seconds. **The workflow runs as long as it needs to; the sync handler
 is just a forwarder.**
 
-## Step 3: Apply TODO 12 in `payments/workflows.py` and `payments/worker.py`
+## Step 3: Apply TODOs 12a–12d in `payments/workflows.py` and `payments/worker.py`
 
-### 3a. Add `ReviewCallerWorkflow` to `payments/workflows.py`
+This step spans two files. Four TODO 12 markers in total: two in
+`workflows.py` and two in `worker.py`.
 
-Open `payments/workflows.py`. Add `ReviewRequest` to the
-`imports_passed_through` block at the top of the file (so the
-workflow file can reference the `ReviewRequest` type from
-`shared.models`).
+### TODO 12a: Add the `ReviewRequest` import
 
-Then add a second workflow class at the bottom of the file:
+Open `payments/workflows.py`. Inside the `imports_passed_through`
+block at the top, add:
+
+```python
+from shared.models import ReviewRequest
+```
+
+`ReviewCallerWorkflow` (added in TODO 12b) needs this type.
+
+### TODO 12b: Add `ReviewCallerWorkflow` to `payments/workflows.py`
+
+Below the existing `PaymentProcessingWorkflow`, add a second workflow
+class:
 
 ```python
 @workflow.defn
@@ -266,15 +287,19 @@ the reviewer flow. Reviewers do not call the Update directly; they
 trigger a `ReviewCallerWorkflow`, which goes through Nexus, which
 calls `submit_review`, which sends the Update.
 
-### 3b. Register `ReviewCallerWorkflow` in `payments/worker.py`
+### TODO 12c: Update the import in `payments/worker.py`
 
-Open `payments/worker.py`. Update the import:
+Open `payments/worker.py`. Extend the workflow import to include
+`ReviewCallerWorkflow`:
 
 ```python
 from payments.workflows import PaymentProcessingWorkflow, ReviewCallerWorkflow
 ```
 
-Update the `workflows` list in the `Worker(...)` call:
+### TODO 12d: Register `ReviewCallerWorkflow` on the Worker
+
+In the `Worker(...)` call, add `ReviewCallerWorkflow` to the
+`workflows` list:
 
 ```python
 workflows=[PaymentProcessingWorkflow, ReviewCallerWorkflow],
@@ -283,7 +308,7 @@ workflows=[PaymentProcessingWorkflow, ReviewCallerWorkflow],
 ## Step 4: Start the Compliance Worker
 
 Click the
-[button label="Compliance Worker" background="#444CE7"](tab-2)
+[button label="Compliance Worker" background="#444CE7"](tab-1)
 terminal:
 
 ```bash,run
@@ -293,7 +318,7 @@ uv run python -m compliance.worker
 ## Step 5: Start the Payments Worker
 
 Click the
-[button label="Payments Worker" background="#444CE7"](tab-3) terminal:
+[button label="Payments Worker" background="#444CE7"](tab-2) terminal:
 
 ```bash,run
 uv run python -m payments.worker
@@ -304,7 +329,7 @@ and `ReviewCallerWorkflow`.
 
 ## Step 6: Run the starter
 
-Click the [button label="Starter" background="#444CE7"](tab-4)
+Click the [button label="Starter" background="#444CE7"](tab-3)
 terminal:
 
 ```bash,run
@@ -324,7 +349,7 @@ Leave the starter running.
 
 ## Step 7: Submit the review
 
-Click the [button label="Reviewer" background="#444CE7"](tab-5)
+Click the [button label="Reviewer" background="#444CE7"](tab-4)
 terminal:
 
 ```bash,run
@@ -336,14 +361,14 @@ approving TXN-B with an explanation, runs `ReviewCallerWorkflow`
 (which goes through `compliance-endpoint` -> `submit_review` ->
 Update), and prints the result.
 
-Watch the [button label="Starter" background="#444CE7"](tab-4) terminal:
+Watch the [button label="Starter" background="#444CE7"](tab-3) terminal:
 **TXN-B should unblock** as soon as the review lands. The starter
 moves on to TXN-C, which declines as HIGH risk, and exits.
 
 ## Step 8: Inspect the Update events
 
 Click the
-[button label="Temporal UI" background="#444CE7"](tab-6) tab. Use the
+[button label="Temporal UI" background="#444CE7"](tab-5) tab. Use the
 namespace selector at the top of the left navigation to switch to
 `compliance-namespace` and open `compliance-TXN-B`. In the Event
 History, find:
@@ -371,16 +396,7 @@ still gets through because the handler workflow resumes from where it
 stopped. Durability works because the workflow is real, not a sync
 handler.
 
-## Step 10: Stop both Workers
-
-Press `Ctrl+C` in both Worker terminals, or:
-
-```bash,run
-pkill -f "compliance.worker" || true
-pkill -f "payments.worker"   || true
-```
-
-## Wrapping up
+## Key Takeaways
 
 You added a complete human-in-the-loop review path. MEDIUM-risk
 transactions block until a reviewer submits a decision, the decision
@@ -406,14 +422,3 @@ circuit breaker. Same handler, several new failure modes.
 > - If the validator never fires, verify it is a method named
 >   `validate_review` decorated with `@review.validator` (the name
 >   matches the Update method).
-
-> [!NOTE]
-> Knowledge check:
->
-> - What does the Update validator give you that a plain Signal
->   handler does not?
-> - Why is it safe for the `submit_review` sync handler to use
->   `nexus.client()` directly when the same code in a workflow would
->   not be allowed?
-> - What does `ReviewCallerWorkflow` give the reviewer that a raw
->   client-side Update call would not?

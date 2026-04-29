@@ -39,3 +39,17 @@ validate:
 # Show the diff between local track and what is on Instruqt.
 diff:
     cd instruqt && instruqt track diff
+
+# Slidev deck. Run from anywhere in the repo.
+
+# Install slide deck dependencies. Run once, or after pulling theme changes.
+slides-install:
+    cd slides && pnpm install
+
+# Start the Slidev dev server on http://localhost:3030.
+slides-dev:
+    cd slides && pnpm dev
+
+# Build the static deck into slides/dist/.
+slides-build:
+    cd slides && pnpm build
