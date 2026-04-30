@@ -31,7 +31,7 @@ jobs:
         with:
           repository: temporalio/workshop-nexus-intro-code
           path: workshop-nexus-intro-code
-          ref: ${{ github.event.inputs.code_ref || (github.ref_name == 'main' && 'main' || 'init') }}
+          ref: ${{ github.event.inputs.code_ref || 'main' }}
 
       - uses: docker/login-action@v3
         with:
