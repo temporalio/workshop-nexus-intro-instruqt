@@ -11,10 +11,13 @@ notes:
   contents: |-
     # Sync handlers vs workflow-backed async handlers
 
-    Sync handlers are limited to 10 seconds and run inline in the
-    Worker process. Async handlers start a workflow on the
-    handler's namespace and return that workflow's eventual result
-    to the caller, with up to 60 days of headroom.
+    Sync handlers are limited to a 10-second per-request handler
+    deadline and run inline on the Worker. Async handlers start a
+    workflow on the handler's namespace and return that workflow's
+    eventual result to the caller, with multi-day headroom
+    (Temporal Cloud has a hard 60-day cap; self-hosted is configurable
+    via `component.nexusoperations.limit.scheduleToCloseTimeout`
+    and can exceed 60 days).
 
     Switching is a small code change but a large semantic change.
     A workflow runs on the handler side. Durability becomes a
@@ -73,24 +76,28 @@ Operation:
 - The handler is decorated with `@nexus.workflow_run_operation`, not
   `@nexusrpc.handler.sync_operation`.
 - The handler's job is to **start a workflow** and return its handle.
-  The Nexus runtime forwards the eventual workflow result to the
-  caller. The handler returns immediately; the workflow runs as long
-  as it needs to.
+  The Nexus runtime records an **operation token** on the caller's
+  `NexusOperationStarted` event; the token identifies the started
+  handler workflow and is what the caller uses to cancel or re-attach
+  to the operation later. A **Nexus completion callback** is attached
+  to the StartOperation request by the caller's outbound invocation
+  task; that callback delivers the eventual workflow result back to
+  the caller. The handler returns immediately; the workflow runs as
+  long as it needs to.
 - The caller's history shows three events:
-  `NexusOperationScheduled`, `NexusOperationStarted` (when the
-  workflow has accepted the request), and `NexusOperationCompleted`
-  (when the workflow returns).
-- Idempotency is your job. If the Nexus runtime retries the start
-  request, you do not want to spawn a duplicate workflow. The
-  `WorkflowIDConflictPolicy.USE_EXISTING` policy returns a handle to
-  the already-running workflow on retry.
+  `NexusOperationScheduled`, `NexusOperationStarted` (recorded when
+  the handler returns the operation token to the caller), and
+  `NexusOperationCompleted` (when the workflow returns).
+- Idempotency is your job. Nexus retries land on the same workflow ID;
+  `WorkflowIDConflictPolicy.USE_EXISTING` makes the second start
+  return the existing handle instead of failing.
 - Three timeouts apply: `schedule_to_close` (total budget),
   `schedule_to_start` (handler must pick it up by then), and
   `start_to_close` (handler workflow must finish within this).
 
 You will also implement `ComplianceWorkflow.run` itself, which simply
 runs the rule-based check as an Activity and returns the result. The
-workflow is small for now; Chapter 6 grows it to support human review.
+workflow is small for now.
 
 ## What you will do
 
@@ -136,12 +143,12 @@ Two notes:
   on the Compliance Worker so the Compliance team owns the
   implementation.
 - The result is stored on `self._auto_result` rather than a local
-  variable so Chapter 6 can extend this method with a MEDIUM-risk
+  variable so this method can later be extended with a MEDIUM-risk
   `wait_condition` without restructuring the whole `run` method.
 
 ## Step 2: Apply TODOs 7a–7b in `compliance/service_handler.py`
 
-Open `compliance/service_handler.py`. Two TODO 7 markers — one above
+Open `compliance/service_handler.py`. Two TODO 7 markers: one above
 the `check_compliance` method (TODO 7a), and one above the now-unused
 import at the top (TODO 7b).
 
@@ -158,7 +165,7 @@ async def check_compliance(
     return await ctx.start_workflow(
         ComplianceWorkflow.run,
         input,
-        id=f"compliance-{input.transaction_id}",
+        id=f"compliance-ch05-{input.transaction_id}",
         id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
 ```
@@ -177,8 +184,7 @@ Three pieces:
    request for the same transaction, the existing workflow is reused
    instead of failing.
 
-`submit_review` stays a `NotImplementedError` stub. Chapter 6 turns it
-into a real Update sender.
+`submit_review` stays a `NotImplementedError` stub for now.
 
 ### TODO 7b: Delete the now-unused import
 
@@ -234,14 +240,22 @@ What each does:
   caller schedules the Operation until completion. Already there from
   Chapter 4.
 - `schedule_to_start_timeout`: how long Nexus will wait for a
-  Compliance Worker to pick up the Operation. If no Worker is
-  polling, the Operation fails after 1 minute.
+  Compliance Worker to pick up the Operation. If the operation has
+  not been picked up by a Compliance Worker within 1 minute, it fails
+  with `TIMEOUT_TYPE_SCHEDULE_TO_START`.
 - `start_to_close_timeout`: once the handler workflow has started,
   how long it may run. Bounds the handler's runtime, not the caller's
   total wait.
 
-These timeouts only matter once the handler is async. A sync handler
-hits the 10-second deadline before any of these expire.
+`start_to_close_timeout` only applies to async handlers. A sync
+handler has no "started" state separate from its return, so this
+timeout has nothing to bound. `schedule_to_close_timeout` and
+`schedule_to_start_timeout` do apply to sync handlers, but each
+individual sync attempt is also bounded by the 10-second Nexus
+request deadline (measured from the caller's History Service through
+matching, so the handler's actual budget is shorter than 10 seconds);
+misses are retried by the Nexus Machinery up to
+`schedule_to_close_timeout`.
 
 ## Step 5: Start the Compliance Worker
 
@@ -289,7 +303,7 @@ monitoring, TXN-C declined HIGH.
 
 Click the
 [button label="Temporal UI" background="#444CE7"](tab-4) tab. Switch
-to `payments-namespace`. Open `payment-TXN-A` and look at the Event
+to `payments-namespace`. Open `payment-ch05-TXN-A` and look at the Event
 History.
 
 The compliance Nexus operation now shows **three events** instead of
@@ -303,14 +317,16 @@ Now switch the namespace selector to `compliance-namespace`. Open the
 Workflows view. **You should now see workflows**, one per
 transaction:
 
-- `compliance-TXN-A`
-- `compliance-TXN-B`
-- `compliance-TXN-C`
+- `compliance-ch05-TXN-A`
+- `compliance-ch05-TXN-B`
+- `compliance-ch05-TXN-C`
 
-That is the durability you just gained. Each transaction now has a
-durable workflow on the Compliance side that can survive worker
-restarts, can run for up to 60 days, and can be inspected, queried,
-or cancelled independently of the caller.
+That is the durability the handler side just gained. Each transaction
+now has a durable workflow on the Compliance side that can survive
+worker restarts, can run with multi-day headroom (60 days on Temporal
+Cloud; longer on self-hosted clusters that raise
+`component.nexusoperations.limit.scheduleToCloseTimeout`), and can be
+inspected, queried, or cancelled independently of the caller.
 
 ## Step 9 (optional): Durability test
 
@@ -334,8 +350,11 @@ workflow per transaction, with full durability. The
 `USE_EXISTING` ID conflict policy made the handler idempotent on
 retry.
 
-In Chapter 6 the `ComplianceWorkflow` grows a **human review path**.
-MEDIUM-risk transactions block in a `wait_condition` until a human
-submits a review through a second Nexus Operation (`submit_review`),
-which is implemented as a Workflow Update. That is the moment the
-"Nexus + Updates" combo pays off.
+This chapter established three things on the handler side:
+workflow-backed durability (the Compliance namespace now hosts a
+workflow per transaction), the three-event async lifecycle on the
+caller (`NexusOperationScheduled`, `NexusOperationStarted`,
+`NexusOperationCompleted`), and the three timeout knobs
+(`schedule_to_close_timeout`, `schedule_to_start_timeout`, and the
+async-only `start_to_close_timeout`) that bound the operation at each
+stage.

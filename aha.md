@@ -66,7 +66,7 @@ Run this block **after** Slidev activities 1.1 (cross-team problem) and 1.2 (fou
 | 9 | Pick answer (multi) | "Which of these are Nexus building blocks?" (correct: Service, Operation, Endpoint, Registry) | 1.2 |
 | 10 | Match pairs | "Building-Block Bingo: match each primitive to its job." | 1.2 |
 | 11 | Short answer | "Maximum sync handler runtime, in seconds?" (10) | 1.5 |
-| 12 | Short answer | "Maximum async Schedule-to-Close on Cloud, in days?" (60) | 1.5 |
+| 12 | Short answer | "Maximum async Schedule-to-Close on Temporal Cloud, in days?" (60) | 1.5 |
 
 After slide 12, return to Slidev for the chapter recap. Do **not** show a leaderboard yet; the halftime board is at slide 19.
 

@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+
+# Stop the topology sandbox http.server. Runs on both forward and
+# backward navigation, so the server is never left dangling.
+if [ -f /tmp/topology-sandbox.pid ]; then
+    kill "$(cat /tmp/topology-sandbox.pid)" 2>/dev/null || true
+    rm -f /tmp/topology-sandbox.pid
+fi
+pkill -f "http.server 8765" || true
+sleep 1

@@ -82,25 +82,27 @@ Nexus errors split into two kinds:
 
 - **Non-retryable** (`nexusrpc.OperationError` with state `FAILED`,
   or `HandlerError` with non-retryable type like `BAD_REQUEST`,
-  `NOT_FOUND`, etc.): the operation cannot succeed regardless of how
-  many times you try. Caller workflow records `NexusOperationFailed`
-  and stops.
+  `NOT_FOUND`, `NOT_IMPLEMENTED`, etc.): the operation cannot succeed
+  regardless of how many times you try. Caller workflow records
+  `NexusOperationFailed` and stops.
 - **Retryable** (`nexusrpc.HandlerError` with retryable type like
   `INTERNAL`, `RESOURCE_EXHAUSTED`, `UNAVAILABLE`): treated as a
   transient failure. The caller backs off and retries automatically.
 
-Cancellation is its own dimension. A Nexus operation runs as a
-workflow on the handler side, and cancellation propagates from the
-caller's workflow through the Nexus boundary to the handler workflow.
-You do not write any cancel-forwarding code; the platform does it.
+Cancellation is its own dimension. A workflow-backed Nexus operation
+runs as a workflow on the handler side, and cancellation propagates
+from the caller's workflow through the Nexus boundary to the handler
+workflow. You do not write any cancel-forwarding code; the platform
+does it.
 
 The circuit breaker is a guardrail. If a single handler endpoint keeps
 failing retryably, retries pile up across every caller in the same
-namespace. To prevent that from saturating the platform, Temporal
-opens a per-(caller-Namespace, Endpoint) breaker after **5 consecutive
-retryable failures**, blocks new operations for **60 seconds**, then
-half-opens with a single probe request. Pass the probe and the
-breaker closes; fail it and the breaker reopens for another 60.
+caller-Namespace pointing at that Endpoint. To prevent that from
+saturating the platform, Temporal opens a per-(caller-Namespace,
+Endpoint) breaker after **5 consecutive retryable failures**, blocks
+new operations for **60 seconds**, then half-opens with a single probe
+request. Pass the probe and the breaker closes; fail it and the
+breaker reopens for another 60.
 
 ## What you will do
 
@@ -124,7 +126,7 @@ breaker closes; fail it and the breaker reopens for another 60.
 
 Open `compliance/service_handler.py` in the
 [button label="Code Editor" background="#444CE7"](tab-0). Two TODO 13
-markers — one near the top of the file (TODO 13a), and one inside the
+markers: one near the top of the file (TODO 13a), and one inside the
 `check_compliance` body before `ctx.start_workflow` (TODO 13b).
 
 ### TODO 13a: Add the top-level `nexusrpc` import
@@ -166,7 +168,7 @@ async def check_compliance(
     return await ctx.start_workflow(
         ComplianceWorkflow.run,
         input,
-        id=f"compliance-{input.transaction_id}",
+        id=f"compliance-ch07-{input.transaction_id}",
         id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
 ```
@@ -203,31 +205,44 @@ terminal. Run the pre-supplied starter:
 uv run python -m payments.lifecycle_starter
 ```
 
-This script runs four scenarios in sequence (roughly a minute and a
-half end to end, depending on how fast retries land). Each scenario
-hits a different lifecycle path. **Keep an eye on the terminal
-output as each scenario runs**, then use the Inspector tab in Step 5
-to drill in.
+This script runs four scenarios in sequence and **pauses between each
+one** (after A, after B, after C), waiting for you to press Enter
+before moving on. That gives you time to inspect the workflow from
+the previous scenario in the Inspector tab (Step 5) before the next
+scenario kicks off. Total runtime is gated on you, not on a fixed
+clock.
+
+The flow you will see in this terminal:
+
+1. Scenario A runs and prints its results.
+2. Starter prints `Scenario A done. ... press Enter to continue` and blocks.
+3. You switch to the Inspector tab, run the Step 5 commands for A, then come back here and press Enter.
+4. Scenario B runs, then pauses again. Repeat for C.
+5. Scenario D runs last and does not pause; the starter ends after D.
 
 The four scenarios:
 
 - **Scenario A: non-retryable failure.** TXN-FAIL-NONRETRY-1 hits the
   `OperationError` branch. The caller workflow records
-  `NexusOperationFailed` immediately and ends in `Failed` state with
-  no retries.
+  `NexusOperationFailed`, raises `NexusOperationError` inside the
+  workflow, and ends in `Failed` because the code lets the exception
+  propagate. No retries.
 - **Scenario B: retryable failure with backoff.** TXN-FAIL-RETRY-1
   hits the `HandlerError` branch. The caller's Pending Nexus
   Operations show `BackingOff` state with the attempt count rising.
   The starter waits ~20 seconds, then `terminate()`s the workflow so
-  the demo can move on. (We use `terminate()` rather than `cancel()`
-  here because a `BackingOff` Nexus operation would not surface a
-  cancel until its next attempt; terminate is unconditional.)
+  the demo can move on. We use `terminate()` rather than `cancel()`
+  here because cancellation propagation goes through the same
+  outbound queue and would not interrupt a `BackingOff` operation
+  until its next retry attempt.
 - **Scenario C: cancellation propagation.** TXN-CANCEL-1 is a $12,000
-  international transfer (MEDIUM risk). It runs the auto-check, then
-  pauses in the `wait_condition` from Chapter 6. After 3 seconds, the
-  starter cancels the **payment** workflow. Cancellation flows
-  through the Nexus boundary into `compliance-TXN-CANCEL-1`, and both
-  workflows end in `Canceled`.
+  transfer that classifies as MEDIUM risk because the amount exceeds
+  the $10,000 threshold (the lifecycle starter sends domestic US-to-US
+  for this scenario). It runs the auto-check, classifies as MEDIUM,
+  and enters the 10-second `workflow.sleep` from Chapter 6's durability
+  demo. After 3 seconds, the starter cancels the **payment** workflow.
+  Cancellation flows through the Nexus boundary into
+  `compliance-ch07-TXN-CANCEL-1`, and both workflows end in `Canceled`.
 - **Scenario D: circuit breaker.** Six TXN-CIRCUIT-* transactions in
   rapid succession all hit the `HandlerError` branch. After ~5
   consecutive failures, the breaker on
@@ -240,14 +255,18 @@ The four scenarios:
 
 Click the [button label="Inspector" background="#444CE7"](tab-4)
 terminal. Use it to run `temporal workflow describe` and `temporal
-workflow show` against the workflows the starter is touching.
+workflow show` against the workflows the starter is touching. Run
+these commands **during the pause after each scenario** (the starter
+is blocked on `press Enter to continue`). Once you have inspected,
+switch back to the Lifecycle Starter tab and press Enter to advance
+to the next scenario.
 
 ### Scenario A inspection
 
-After the starter has finished scenario A:
+While the starter is paused after scenario A:
 
 ```bash,run
-temporal workflow show -w payment-TXN-FAIL-NONRETRY-1 -n payments-namespace
+temporal workflow show -w payment-ch07-TXN-FAIL-NONRETRY-1 -n payments-namespace
 ```
 
 In the Event History, look for `NexusOperationScheduled` followed
@@ -256,30 +275,30 @@ The workflow status is `Failed`.
 
 ### Scenario B inspection
 
-While the starter is in scenario B (roughly twenty seconds, give or
-take), run repeatedly:
+While the starter is paused after scenario B (the starter has already
+called `terminate()` by the time you see the pause prompt), run:
 
 ```bash,run
-temporal workflow describe -w payment-TXN-FAIL-RETRY-1 -n payments-namespace
+temporal workflow describe -w payment-ch07-TXN-FAIL-RETRY-1 -n payments-namespace
 ```
 
-You should see a `Pending Nexus Operations` block with
-`State: BackingOff` and `Attempt` rising. **Run the command quickly;
-once the starter terminates the workflow at the end of the scenario,
-the BackingOff state is gone from the snapshot.** This is one of the
-spots where `lessons-learned.md` calls out the importance of
-in-flight observation.
+By the pause point the workflow is `Terminated` and Pending Nexus
+Operations is empty. To watch `State: BackingOff` and the climbing
+`Attempt` counter live, run the command in this Inspector tab
+**during** scenario B's 20-second window, before the starter
+terminates the workflow. In other words, peek before the pause, then
+inspect the terminated state during the pause.
 
 ### Scenario C inspection
 
-After the starter ends scenario C:
+While the starter is paused after scenario C:
 
 ```bash,run
-temporal workflow describe -w payment-TXN-CANCEL-1 -n payments-namespace
+temporal workflow describe -w payment-ch07-TXN-CANCEL-1 -n payments-namespace
 ```
 
 ```bash,run
-temporal workflow describe -w compliance-TXN-CANCEL-1 -n compliance-namespace
+temporal workflow describe -w compliance-ch07-TXN-CANCEL-1 -n compliance-namespace
 ```
 
 The payment workflow ends `Canceled`. The Nexus operation in its
@@ -290,29 +309,35 @@ boundary on its own.
 
 The available cancellation types on `nexus_client.execute_operation`
 are `ABANDON`, `TRY_CANCEL`, `WAIT_REQUESTED`, and `WAIT_COMPLETED`.
-The default is `WAIT_COMPLETED`: the caller waits for the handler to
-finish cleanup before its own cancel completes. Pick the weakest one
-that meets your correctness needs.
+The default is `WAIT_COMPLETED`: the caller waits for the handler
+operation to reach a terminal state (`Completed`, `Failed`, or
+`Canceled`, depending on whether the handler honored the cancel)
+before its own cancel completes. Pick the loosest cancellation
+guarantee that still meets correctness; `ABANDON` is the loosest,
+`WAIT_COMPLETED` the strongest.
 
 > [!NOTE]
 > Sync Nexus operations cannot be canceled because they hold no
 > operation token. Cancellation only applies to async,
-> workflow-backed handlers like `ComplianceWorkflow`. The Chapter 5
+> workflow-backed handlers like `ComplianceWorkflow`. The earlier
 > switch to `@nexus.workflow_run_operation` is what makes scenario C
 > possible at all.
 
 > [!NOTE]
-> A small wire-format aside: at the proto layer the SDK enum
-> `WAIT_REQUESTED` is named `WAIT_CANCELLATION_REQUESTED`. If you read
-> raw event payloads or replay output you will see the longer form.
+> A small wire-format aside: the proto enum is
+> `WAIT_CANCELLATION_REQUESTED`; Python's SDK shortens it to
+> `WAIT_REQUESTED`. If you read raw event payloads or replay output
+> you will see the longer form.
 
 ### Scenario D inspection
 
-While the starter is in scenario D (after the first ~5 transactions
-have failed):
+Scenario D does not have a pause after it; the starter terminates the
+six TXN-CIRCUIT workflows and exits. Inspect during the 12-second
+window scenario D waits for retries and the breaker to trip (after
+the first ~5 transactions have failed):
 
 ```bash,run
-temporal workflow describe -w payment-TXN-CIRCUIT-6 -n payments-namespace
+temporal workflow describe -w payment-ch07-TXN-CIRCUIT-6 -n payments-namespace
 ```
 
 You should see:
@@ -341,10 +366,12 @@ protects the platform when one handler endpoint misbehaves. None of
 this required wiring on your part beyond the failure injections in
 TODO 13; the Nexus runtime handles all of it.
 
-Chapter 8 is the polyglot demo: the same Service contract, fulfilled
-by a Java handler instead of the Python one, with **no Python code
-change** on the caller side. Same Endpoint, same task queue,
-different language.
+With this chapter you have the full Nexus operation lifecycle in
+hand: success, non-retryable failure, retryable backoff, cancellation
+propagation, and the per-(caller-Namespace, Endpoint) circuit
+breaker. The Service contract you defined and refined across earlier
+chapters carries all of that behavior automatically; the failure
+modes are platform features, not code you wrote.
 
 > [!IMPORTANT]
 > Production take-aways:

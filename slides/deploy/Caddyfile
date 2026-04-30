@@ -1,0 +1,37 @@
+# Caddy 2 configuration for the Slidev deck.
+# Before installing:
+#   1. Replace `slides.example.com` with your domain.
+#   2. Replace the placeholder bcrypt hash on the `mason` line below
+#      with the output of `caddy hash-password` on the VPS.
+# Caddy auto-provisions Let's Encrypt certs on first HTTPS request.
+
+slides.example.com {
+    encode gzip zstd
+
+    # Let `URL/export` work as well as `URL/export.pdf`.
+    @export path /export
+    rewrite @export /export.pdf
+
+    # Lock the presenter view behind HTTP basic auth so only you can
+    # drive the room's slide position. Attendees on `URL/` are not
+    # prompted; only `URL/presenter` and `URL/presenter/*` are.
+    # Generate the hash with `caddy hash-password` on the VPS.
+    @presenter path /presenter /presenter/*
+    basicauth @presenter {
+        mason REPLACE_WITH_BCRYPT_HASH_FROM_CADDY_HASH_PASSWORD
+    }
+
+    # Reverse-proxy everything to Slidev's dev server.
+    # Caddy 2 transparently handles the WebSocket upgrade,
+    # which is what carries Slidev's presenter-sync and HMR.
+    reverse_proxy localhost:3030
+
+    # Lightweight access log for spot-checking attendee connections.
+    log {
+        output file /var/log/caddy/slides-access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+        format console
+    }
+}

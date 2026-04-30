@@ -18,8 +18,10 @@ notes:
       type, output type).
     - **Endpoint**: a server-side routing rule. Carries the target
       namespace, task queue, and a Markdown description.
-    - **Registry**: the dev server's catalogue of Endpoints,
-      visible in the Web UI.
+    - **Registry**: what the server consults at dispatch time to
+      resolve a Nexus request to its target. Endpoint names must be
+      unique within it. The Web UI surfaces the Registry as a side
+      benefit.
 
     In this chapter you will define the Service and Operations in
     Python, then create the Endpoint with the Temporal CLI.
@@ -28,7 +30,7 @@ tabs:
   title: Code Editor
   type: code
   hostname: workshop
-  path: /root/workshop/exercises/02_service_contract/exercise/shared/service.py
+  path: /root/workshop/exercises/02_service_contract/exercise
 - id: ystkhevci7d2
   title: Terminal
   type: terminal
@@ -57,22 +59,28 @@ points callers at the Compliance team's task queue.
 ## What You're Solving
 
 Nexus exists so that two teams can call each other's Temporal code
-without sharing a codebase or a namespace. The mechanism that makes that
-work is a **typed contract** that both teams import, plus a **routing
-rule** in the server that says "calls to this Endpoint go to that team."
+without sharing a codebase or having to share a namespace. The
+mechanism that makes that work is a **typed contract** that both teams
+import, plus a **routing rule** (the Endpoint acts as a reverse proxy
+to a target task queue) in the server that says "calls to this
+Endpoint go to that team."
 
 There are two distinct artifacts in this chapter:
 
 - The **Service contract** is a Python class decorated with
   `@nexusrpc.service`. It names the Operations and types their inputs
-  and outputs. It lives in `shared/service.py`. Payments will use it to
-  build a stub (Chapter 4); Compliance will implement a handler for it
-  (Chapter 3). The dev server has no awareness of this class. It is a
-  pure Python interface that both teams agree on.
+  and outputs. It lives in `shared/service.py`. Payments imports it to
+  build a caller-side stub; Compliance imports it to implement a
+  handler. The dev server has no awareness of this class. It is a pure
+  Python interface that both teams agree on.
 - The **Endpoint** is a routing rule in the dev server's Nexus
   registry. It carries the target namespace, task queue, and a Markdown
   description that documents what the contract exposes. The Endpoint
-  description is the only Nexus thing that shows up in the Web UI.
+  description is the only Markdown-rendered field Nexus exposes in the
+  Web UI. The Endpoint name, target namespace, and target task queue
+  also render on the Nexus Endpoints index (as plain text), and
+  `NexusOperation*` events show up in workflow histories once a caller
+  workflow is dispatching through it.
 
 By the end of the chapter you will be able to navigate to **Nexus
 Endpoints** in the Web UI and see the Endpoint description rendered as
@@ -86,11 +94,15 @@ reads first when they want to call your Service.
 > chapter assumes both namespaces exist.
 
 > [!NOTE]
-> The contract lives in the `shared/` package because both teams
-> import it. Neither team owns it. `payments/` and `compliance/` each
-> import `ComplianceNexusService` from `shared/service.py`, which is
-> what makes the contract a third artifact rather than something
-> either team can change unilaterally.
+> The contract interface lives in the `shared/` package because both
+> teams import it. Neither team owns the interface itself. `payments/`
+> and `compliance/` each import `ComplianceNexusService` from
+> `shared/service.py`, which is what makes the contract a third
+> artifact rather than something either team can change unilaterally.
+> The request and result dataclasses live alongside their domain
+> teams (`compliance.models` for `ComplianceRequest` /
+> `ComplianceResult`, `shared.models` for `ReviewRequest`), so each
+> team owns the data shapes they introduced.
 
 ## What you will do
 
@@ -109,8 +121,8 @@ reads first when they want to call your Service.
 
 Open `shared/service.py` in the
 [button label="Code Editor" background="#444CE7"](tab-0). The file
-contains an empty `ComplianceNexusService` class with three TODO
-markers.
+contains a `ComplianceNexusService` class with three TODO markers and
+a placeholder `pass`.
 
 ### TODO 1a: Decorate the class
 
@@ -152,27 +164,39 @@ class ComplianceNexusService:
     submit_review: nexusrpc.Operation[ReviewRequest, ComplianceResult]
 ```
 
-Both Operations belong in the contract from the start. Chapter 3 will
-implement `check_compliance` for real, and `submit_review` will be a
-stub until Chapter 6 turns it into a real Update sender.
+Both Operations belong in the contract from the start. The contract
+declares the full surface area both teams will use; the matching
+handlers and caller wiring come later in this workshop.
 
 > [!WARNING]
 > If you forget the `@nexusrpc.service` decorator, the file still
 > loads. The class is just an undecorated Python class with no Nexus
-> metadata. Nothing complains until a Worker tries to register a
-> handler against it (Chapter 3) or a caller workflow tries to build a
-> stub from it (Chapter 4), at which point you get a confusing failure
-> deep in worker startup. Catching it now saves debugging later: the
-> line above the class must be `@nexusrpc.service`, and both Operation
-> lines must use the `nexusrpc.Operation[Input, Output]` annotation
-> form (no `=`, no body).
+> metadata. Nothing complains until a module that depends on the
+> contract is imported, e.g., a handler module that applies
+> `@nexusrpc.handler.service_handler(service=ComplianceNexusService)`
+> at import time and raises a message like:
+>
+> ```text
+> ValueError: <class 'shared.service.ComplianceNexusService'> is not a
+> valid Nexus service definition. Use the @nexusrpc.service decorator
+> on a class to define a Nexus service definition.
+> ```
+>
+> The error fires before the Worker is constructed, but the traceback
+> points at the handler module, not the contract, so it can look like
+> a handler-side bug when it is really a missing decorator on the
+> contract. Catching it now saves debugging later: the line above the
+> class must be `@nexusrpc.service`, and both Operation lines must use
+> the `nexusrpc.Operation[Input, Output]` annotation form (no `=`, no
+> body).
 
 ## Step 2: Verify the namespaces
 
-The Payments and Compliance teams will live in separate namespaces from
-Chapter 3 onwards. Each namespace is its own isolated execution
-environment with separate workflows, separate task queues, and separate
-access control. **Nexus is the only thing that crosses the boundary.**
+The Payments and Compliance teams live in separate namespaces. Each
+namespace is its own isolated execution environment with separate
+workflows and separate task queues (and, in production or on Temporal
+Cloud, separate access control via a configured Authorizer). **Nexus
+is the only thing that crosses the boundary.**
 
 Both namespaces were created for you when the track started. Verify
 they exist. In the [button label="Terminal" background="#444CE7"](tab-1):
@@ -231,8 +255,10 @@ the description rendered as Markdown. **This page is what an engineer
 on a different team would look at to understand what the Endpoint
 exposes before writing a caller workflow against it.**
 
-The Endpoint exists at the cluster level. It is not scoped to any one
-namespace. That is what lets it bridge teams.
+The Endpoint exists at the cluster level on a self-hosted server like
+the workshop dev server, and at the account level on Temporal Cloud.
+Either way, it is not scoped to any one namespace, which is what lets
+it bridge teams.
 
 ## Key Takeaways
 
@@ -242,9 +268,10 @@ to deliver calls between them. There is no Worker to start in this
 chapter. The contract is just Python; the Endpoint is just a row in the
 server's registry.
 
-In Chapter 3 you will write the **handler** that fulfills the
-`check_compliance` Operation, and you will register it on a brand new
-Compliance Worker that polls the `compliance-risk` task queue.
+With the contract written and the Endpoint registered, the Compliance
+team has everything it needs to implement a handler against this
+Service, and the Payments team has everything it needs to build a
+caller-side stub against the same shared interface.
 
 > [!NOTE]
 > Take-away: the contract is ordinary Python. The Nexus runtime reads

@@ -2,8 +2,9 @@
 # Requires the Instruqt CLI: https://docs.instruqt.com
 # Authenticate once with `instruqt auth login` before any push.
 
-# Default recipe.
-default: push
+# Default recipe: list available recipes.
+default:
+    @just --list
 
 # First-time push: instruqt/track.yml's `id:` is currently "". The CLI
 # will create the track on Instruqt under the slug

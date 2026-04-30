@@ -55,8 +55,8 @@ code to edit.
 > [!NOTE]
 > This chapter has no separate **Solution** tab because there is
 > nothing to write. The **Code Editor** opens the finished monolith.
-> From Chapter 2 on, the **Code Editor** opens the exercise and a
-> separate **Solution** tab shows the finished file.
+> Later chapters open the exercise in the **Code Editor** and surface
+> the finished file in a separate **Solution** tab.
 
 ## What You're Solving
 
@@ -67,19 +67,21 @@ takes a transaction, validates the payment, runs a compliance check, and
 either captures the funds or declines the transaction. In the version
 you are about to run, **all of that runs in one Worker, in one
 namespace, with one set of dependencies**. The compliance check is
-implemented as an Activity (`check_compliance`) imported into the
-Payments Worker.
+implemented as an Activity (`check_compliance`) imported from a sibling
+`compliance` package and registered on the Payments Worker.
 
 > [!NOTE]
 > A note on framing: this monolith is the *most extreme* form of
 > coupling, where Compliance code is registered as an activity on the
-> Payments worker. In real production deployments most teams already
-> separate workers per workflow type, so the more universal version of
-> the problem is "two teams in the same namespace with no contract
-> between them." Nexus is the canonical fix for both shapes. We chose
-> the visceral version for Chapter 1 because you can literally watch
-> Compliance code import into the Payments process; the lessons
-> transfer to the more realistic case starting in Chapter 2.
+> Payments worker. In real production the more common shape of the
+> same problem is two teams sharing a single namespace and task queue
+> with no service contract between them, coupled at the import or
+> shared-database level rather than at the activity registration level.
+> Nexus is the canonical fix for both shapes. We chose the visceral
+> version for this chapter because Compliance code is right there in
+> the Payments worker. You can see the import line and the
+> `Registered: ... check_compliance` entry on the worker banner; the
+> lessons transfer directly to the more realistic case.
 
 That is fine when one team owns everything. It stops being fine the
 moment Compliance becomes its own team:
@@ -89,7 +91,7 @@ moment Compliance becomes its own team:
 - Compliance touches data Payments should not see. Putting it in the
   same Worker means the same process holds both PCI scope and customer
   KYC scope.
-- A bug in compliance crashes the Payments Worker. There is no
+- A bad compliance deploy takes down the Payments Worker. There is no
   blast-radius boundary.
 - Compliance wants to migrate to Java. Today they cannot, because they
   share a Python codebase with Payments.
@@ -140,7 +142,7 @@ Two things to notice in that banner:
    `validate_payment` and `execute_payment`, with the parenthetical
    `(monolith - will decouple)`. Compliance code is loaded directly
    into the Payments Worker process today, and the worker itself
-   knows it is going to lose that activity in a later chapter.
+   announces that this activity is on its way out.
 
 Leave the Worker running. The next step uses a different terminal.
 
@@ -158,9 +160,9 @@ The starter runs three transactions back to back:
 - **TXN-A**: a $250 routine supplier payment (US to US). Should
   approve as LOW risk.
 - **TXN-B**: a $12,000 international consulting fee (US to UK). The
-  rule-based compliance check classifies it as MEDIUM risk because it
-  crosses the $10,000 international threshold, and auto-approves it
-  with an AML monitoring note.
+  rule-based compliance check classifies it as MEDIUM risk because the
+  amount exceeds the $10,000 threshold, and auto-approves it with an
+  AML monitoring note.
 - **TXN-C**: a $75,000 large capital transfer (US to US). Trips the
   over-$50,000 threshold rule and declines.
 
@@ -176,7 +178,7 @@ blocks should look something like this:
 
   Result: COMPLETED
   Risk:   MEDIUM
-  Reason: International transfer above $10K threshold. Approved with AML monitoring note.
+  Reason: Amount above $10K threshold. Approved with AML monitoring note.
   Conf#:  ...
 
   Result: DECLINED_COMPLIANCE
@@ -187,15 +189,16 @@ blocks should look something like this:
 > [!NOTE]
 > TXN-B completing instead of waiting for human review is a property
 > of the rule-based checker we ship with: any MEDIUM-risk transaction
-> is auto-approved with a monitoring note. Chapter 6 introduces a
-> real human-review path for MEDIUM transactions.
+> is auto-approved with a monitoring note. A real human-review path
+> for MEDIUM transactions arrives later in the workshop.
 
 > [!NOTE]
 > `Result: DECLINED_COMPLIANCE` is a *return value* from the
 > Workflow, not a Workflow execution failure. The Temporal UI will
-> still show `payment-TXN-C` as `Completed`, because the Workflow
-> function returned cleanly. This distinction matters again in
-> Chapter 7 when we look at real failures.
+> still show `payment-ch01-TXN-C` as `Completed`, because the Workflow
+> function returned cleanly. The distinction between a returned
+> outcome and an execution failure matters again later in the
+> workshop.
 
 ## Step 3: Inspect the Web UI
 
@@ -204,11 +207,11 @@ Make sure the namespace selector at the top is set to `default`.
 
 You should see three workflow executions in the **Workflows** view:
 
-- `payment-TXN-A` (Completed)
-- `payment-TXN-B` (Completed)
-- `payment-TXN-C` (Completed)
+- `payment-ch01-TXN-A` (Completed)
+- `payment-ch01-TXN-B` (Completed)
+- `payment-ch01-TXN-C` (Completed)
 
-Click into `payment-TXN-A` and look at the Event History. Find the
+Click into `payment-ch01-TXN-A` and look at the Event History. Find the
 event named `ActivityTaskScheduled` for the `check_compliance`
 activity. **This is the seam we are about to break.**
 
@@ -224,9 +227,7 @@ A few things worth noticing:
 
 This is what "tightly coupled" looks like in Temporal. The teams are
 welded together at the Activity level. To pull them apart, we will
-replace the Activity call with a **Nexus Operation** call: a typed
-remote-invocation primitive that runs in a different namespace, with a
-different worker, owned by a different team.
+replace the Activity call with a **Nexus Operation** call.
 
 ## Key Takeaways
 
@@ -234,10 +235,5 @@ In this chapter you ran the application as it exists before any Nexus
 work. Three transactions executed end-to-end through a single Worker
 that owned both Payments and Compliance code. The compliance check
 appeared as an ordinary Activity in the Payments workflow's history,
-with no boundary visible.
-
-The next chapter introduces the **Nexus Service contract**: the typed
-Python interface that the Payments and Compliance teams will share, and
-the Nexus Endpoint that will route calls between them. The contract
-itself is small, and Chapter 2 is largely about what it means and where
-it lives. The actual decoupling happens across Chapters 3 and 4.
+with no boundary visible. That shared Activity registration is the
+seam the rest of the workshop pries open.

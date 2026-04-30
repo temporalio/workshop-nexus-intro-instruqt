@@ -19,8 +19,9 @@ notes:
     The semantic difference: the Activity ran in the Payments
     Worker's own task queue. The Nexus Operation runs across the
     `compliance-endpoint` boundary, in another team's namespace,
-    on another team's Worker. Payments does not import any
-    Compliance code.
+    on another team's Worker. Payments imports only the shared
+    contract and the Compliance request/result types; no handler
+    or activity code.
 
     The visible difference: the caller's Event History will show
     `NexusOperationScheduled` and `NexusOperationCompleted`
@@ -120,7 +121,7 @@ boundary.
 
 Open `payments/workflows.py` in the
 [button label="Code Editor" background="#444CE7"](tab-0). Two TODO 4
-markers — one above the `check_compliance` import (TODO 4a), and one
+markers: one above the `check_compliance` import (TODO 4a), and one
 above the existing activity call (TODO 4b).
 
 ### TODO 4b: Replace the activity call with a Nexus call
@@ -146,15 +147,24 @@ Chapter 2).
 
 Two things to notice:
 
-- **No retry policy.** The Nexus runtime handles retries for the
-  Operation itself. If the handler returns a retryable error, Nexus
-  backs off and retries; if it returns a non-retryable error, Nexus
-  fails the Operation immediately. You will see those modes in
-  Chapter 7.
+- **No caller-side retry policy; Nexus owns retries of the
+  StartOperation, bounded by `schedule_to_close_timeout`.** If the
+  handler returns a retryable error, Nexus backs off and retries the
+  start; if it returns a non-retryable error, Nexus fails the
+  Operation immediately. The retry policy itself is built-in and not
+  user-tunable; only the timeout envelope is. When a handler is
+  workflow-backed, the activities and child workflows *inside* that
+  workflow carry their own `RetryPolicy(...)` configurations, but
+  those are owned by the Compliance team's code, not by this caller.
 - **Only one timeout for now.** `schedule_to_close_timeout` is the
-  outer ceiling. There are two more timeouts (`schedule_to_start`,
-  `start_to_close`) that matter once the handler runs as a workflow.
-  Chapter 5 adds them.
+  outer envelope across all retried StartOperation attempts; it does
+  not bound a single attempt. Each individual sync handler invocation
+  is bounded by the 10-second sync handler deadline (measured from
+  the caller's History Service through matching, so the handler's
+  actual budget is shorter), and the machinery retries timed-out
+  attempts until `schedule_to_close` exhausts. There are two more
+  timeouts (`schedule_to_start`, `start_to_close`) that matter once
+  the handler runs as a workflow.
 
 ### TODO 4a: Remove the unused activity import
 
@@ -169,7 +179,7 @@ Your editor or `ruff` will flag it as unused if you forget.
 
 ## Step 2: Apply TODOs 5a–5b in `payments/worker.py`
 
-Open `payments/worker.py`. Find the two TODO 5 markers — one above the
+Open `payments/worker.py`. Find the two TODO 5 markers: one above the
 `from compliance.activities import check_compliance` line, and one
 above the `activities=[...]` line.
 
@@ -213,8 +223,14 @@ Click the
 uv run python -m payments.worker
 ```
 
-The startup banner should now advertise the `compliance-endpoint`
-that workflows on this Worker will call into. (The Nexus client itself
+The startup banner now includes a `Nexus:` line:
+
+```bash,nocopy
+  Nexus: ComplianceNexusService -> compliance-endpoint
+```
+
+That line just documents which Service contract the workflows on this
+Worker will call against which Endpoint name. (The Nexus client itself
 is created inside the workflow at runtime, not registered on the
 Worker.) The Activities list should be `validate_payment,
 execute_payment` only.
@@ -233,25 +249,25 @@ TXN-C declined HIGH. **Same outcomes, different mechanism.**
 
 > [!NOTE]
 > TXN-B's MEDIUM auto-approval is still a property of the rule-based
-> sync handler we are calling. Chapter 6 turns the MEDIUM path into a
-> real human-in-the-loop review by replacing the sync handler with a
-> workflow-backed one that waits on a Workflow Update.
+> sync handler we are calling. Later in this workshop the MEDIUM path
+> becomes a real human-in-the-loop review by replacing the sync
+> handler with a workflow-backed one that waits on a Workflow Update.
 
 ## Step 6: Inspect the Event History
 
 Click the
 [button label="Temporal UI" background="#444CE7"](tab-4) tab. Switch
 to `payments-namespace` using the namespace selector. Open
-`payment-TXN-A` and look at the Event History.
+`payment-ch04-TXN-A` and look at the Event History.
 
 Find the events that replaced `ActivityTaskScheduled`:
 
-- `NexusOperationScheduled` (caller registers the call)
+- `NexusOperationScheduled` (caller schedules the call; Nexus
+  Machinery now owns delivery)
 - `NexusOperationCompleted` (handler returns)
 
 Two events. No `Started` event in between, because `check_compliance`
-is currently a synchronous handler. (Chapter 5 introduces the async
-handler and the third `NexusOperationStarted` event.)
+is currently a synchronous handler.
 
 Now switch the namespace selector to `compliance-namespace`. Open the
 Workflows view. **You should see no workflows.** The compliance
@@ -274,11 +290,11 @@ and a Nexus Endpoint.
 You also met the **two-event sync pattern**:
 `NexusOperationScheduled` followed by `NexusOperationCompleted`, with
 no Started event in between. Anytime you see those two events in a
-caller's history, you know you are looking at a sync Operation.
+caller's history, you know you are looking at a handler that
+responded synchronously.
 
-In Chapter 5 you convert `check_compliance` into a **workflow-backed
-async Operation**. The handler will start a `ComplianceWorkflow` and
-return its handle. The caller's history grows a third event,
-`NexusOperationStarted`, and you get all the durability properties of
-a real workflow on the Compliance side, without the caller needing
-to know.
+The structural pivot is complete: a typed Service contract, a Nexus
+Endpoint, two namespaces, two Workers, and a caller that no longer
+imports any handler-side code. The caller's Event History records
+the cross-namespace call as two durable events owned by the Nexus
+machinery.

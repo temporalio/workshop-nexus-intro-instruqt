@@ -18,7 +18,16 @@ uv run python -m payments.worker &
 PAYMENTS_PID=$!
 sleep 3
 
-uv run python -m payments.starter
+# Run the regular starter in the background so it can block on TXN-B
+# while the review starter unblocks it.
+uv run python -m payments.starter &
+STARTER_PID=$!
+sleep 5
+
+# Submit the review for TXN-B so the starter can drain through to TXN-C.
+uv run python -m payments.review_starter
+
+wait $STARTER_PID 2>/dev/null || true
 
 kill $PAYMENTS_PID 2>/dev/null || true
 wait $PAYMENTS_PID 2>/dev/null || true

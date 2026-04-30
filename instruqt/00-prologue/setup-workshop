@@ -1,0 +1,22 @@
+#!/bin/bash
+set -euxo pipefail
+source /root/.bashrc
+
+# Belt-and-braces: kill any lingering http.server from a prior run.
+pkill -f "http.server 8765" || true
+
+# Serve the Topology Sandbox visualizer via the workshop's pre-warmed
+# uv venv so the interpreter does not depend on the base image's
+# `python3` symlink.
+nohup uv run --project /opt/workshop python -m http.server 8765 \
+    --directory /opt/workshop/game \
+    > /tmp/topology-sandbox.log 2>&1 &
+echo $! > /tmp/topology-sandbox.pid
+
+for i in $(seq 1 20); do
+    if curl -fsS "http://127.0.0.1:8765/" >/dev/null 2>&1; then
+        echo "Topology sandbox is serving on :8765"
+        break
+    fi
+    sleep 0.25
+done

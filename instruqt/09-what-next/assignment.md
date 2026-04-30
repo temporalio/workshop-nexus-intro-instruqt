@@ -16,6 +16,15 @@ timelimit: 1800
 enhanced_loading: false
 ---
 
+<!--
+CLAUDE_HELP: Release blocker before this workshop runs.
+The repo `https://github.com/temporalio/workshop-nexus-intro-code` referenced
+below is currently empty (only `.gitignore` and `LICENSE`). Push the exercise
+scaffolds, finished solutions for every chapter, and the polyglot Java
+implementation before this chapter ships, otherwise the description below is
+a broken promise. This comment is HTML-only and never renders to attendees.
+-->
+
 # Where to go from here
 
 You just built a Nexus-decoupled application end to end. This page is
@@ -24,37 +33,47 @@ real systems.
 
 ## Official documentation
 
-- **Nexus on docs.temporal.io** — The canonical reference for Nexus
+- **Nexus on docs.temporal.io**: the canonical reference for Nexus
   concepts, lifecycle, and configuration:
   [`https://docs.temporal.io/nexus`](https://docs.temporal.io/nexus).
-- **Temporal docs home** — Everything else (Workers, Workflows,
-  Activities, namespaces, observability, Cloud):
+- **Temporal docs home**: everything else (Workers, Workflows,
+  Activities, namespaces, observability, Temporal Cloud):
   [`https://docs.temporal.io`](https://docs.temporal.io).
-- **Workflow Updates** (the primitive Chapter 6 used through Nexus) —
-  [`https://docs.temporal.io/develop/python/message-passing`](https://docs.temporal.io/develop/python/message-passing).
+- **Workflow Updates** (the primitive Chapter 6 used through Nexus):
+  [`https://docs.temporal.io/develop/python/message-passing#updates`](https://docs.temporal.io/develop/python/message-passing#updates).
 
 ## Hands-on tutorials and courses
 
-- **learn.temporal.io** is Temporal's tutorials and courses hub. Look
-  for the Nexus tutorial track in Python, and follow-on courses on
-  durable execution, error handling, and versioning:
-  [`https://learn.temporal.io`](https://learn.temporal.io).
+- **learn.temporal.io** is Temporal's tutorials and courses hub:
+  [`https://learn.temporal.io`](https://learn.temporal.io). The Nexus
+  tutorial track lives at
+  [`https://learn.temporal.io/tutorials/nexus/`](https://learn.temporal.io/tutorials/nexus/);
+  as of April 2026, the published entry is the Java sync tutorial.
+  Adjacent courses on durable execution, error handling, and Worker
+  Versioning round out the rest of the platform fundamentals (they are
+  not Nexus-specific).
+- **Python Nexus quickstart** is the canonical entry point for Python
+  Nexus development on the docs site:
+  [`https://docs.temporal.io/develop/python/nexus/quickstart`](https://docs.temporal.io/develop/python/nexus/quickstart).
 
 ## Sample code by language
 
 The `samples-*` repositories are where the SDK team ships runnable
 patterns. The Nexus directories cover patterns this workshop did not
-have time to touch (workflow-side cancellation with `asyncio.shield`,
-the `asyncio.create_task` + `task.cancel()` pattern, multi-handler
-endpoints, and more).
+have time to touch (fan-out with `WAIT_REQUESTED` cancellation,
+operations that take multiple typed arguments, additional sync
+operation shapes, and more).
 
 - **Python**:
   [`https://github.com/temporalio/samples-python`](https://github.com/temporalio/samples-python)
-  (look under `nexus_*`).
+  (look under `hello_nexus/` for the canonical sample, and
+  `nexus_cancel/`, `nexus_multiple_args/`, and `nexus_sync_operations/`
+  for additional patterns).
 - **Java**:
   [`https://github.com/temporalio/samples-java`](https://github.com/temporalio/samples-java)
-  (look under `nexus/`). This is also where the polyglot demo's Java
-  side comes from.
+  (look under `core/src/main/java/io/temporal/samples/nexus/`, with
+  sibling `nexuscancellation/` and `nexuscontextpropagation/` directories
+  for additional patterns).
 - **Go**:
   [`https://github.com/temporalio/samples-go`](https://github.com/temporalio/samples-go).
 - **TypeScript**:
@@ -75,26 +94,29 @@ from Chapter 8.
 
 ## Patterns we did not cover that you may want next
 
-- **In-workflow cancellation with `asyncio.create_task`** — the
-  pattern for cancelling a long-running Nexus operation from inside a
-  workflow without cancelling the whole workflow. See `samples-python`.
-- **Worker-side cleanup with `asyncio.shield`** — making handler
-  cleanup work even when the caller has cancelled. See `samples-python`.
-- **Multi-region and Cloud** — Nexus crosses namespaces. Crossing
-  Temporal Cloud accounts and crossing regions both have additional
-  considerations:
-  [`https://docs.temporal.io/cloud`](https://docs.temporal.io/cloud).
-- **Versioning and rollouts** — when the Service contract changes,
-  both teams need a coordinated rollout. The Worker Versioning
-  features in Temporal are designed for exactly this case:
+- **Fan-out with first-result cancellation**: a caller workflow that
+  starts several Nexus operations concurrently, takes the first
+  result, and cancels the rest. See `samples-python/nexus_cancel/`,
+  which also demonstrates `WAIT_REQUESTED` cancellation semantics
+  (the caller proceeds once the handler has received the cancel
+  request without waiting for cleanup to finish).
+- **Multi-region and Temporal Cloud**: Nexus crosses namespaces. Crossing
+  namespaces within an account and crossing regions both have
+  additional considerations on Temporal Cloud:
+  [`https://docs.temporal.io/cloud/nexus`](https://docs.temporal.io/cloud/nexus).
+- **Versioning and rollouts**: when the Service contract changes,
+  both teams need a coordinated rollout. Breaking contract changes are
+  a multi-team API rollout problem (additive operations, migration
+  windows, dual-writing the new shape). Worker Versioning helps on
+  the workflow-code side once the new contract is in place:
   [`https://docs.temporal.io/worker-versioning`](https://docs.temporal.io/worker-versioning).
 
 ## Community
 
-- **Community forum** — long-form questions, design feedback, and
+- **Community forum**: long-form questions, design feedback, and
   searchable history:
   [`https://community.temporal.io`](https://community.temporal.io).
-- **Slack** — real-time chat with the Temporal team and other users:
+- **Slack**: real-time chat with the Temporal team and other users:
   [`https://temporal.io/slack`](https://temporal.io/slack).
 
 ## A small ask

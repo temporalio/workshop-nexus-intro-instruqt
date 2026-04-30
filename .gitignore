@@ -238,3 +238,4 @@ dist/
 # Claude / AI session artifacts (local)
 .ai-sessions/
 .claude/
+.playwright-mcp/

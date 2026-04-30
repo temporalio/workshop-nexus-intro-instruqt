@@ -128,11 +128,19 @@ below `run`.
 Add a third instance variable for the reviewer's outcome:
 
 ```python
-def __init__(self) -> None:
-    self._request: ComplianceRequest | None = None
+@workflow.init
+def __init__(self, request: ComplianceRequest) -> None:
+    self._request: ComplianceRequest = request
     self._auto_result: ComplianceResult | None = None
     self._review_result: ComplianceResult | None = None
 ```
+
+`@workflow.init` receives the workflow's input as constructor
+parameters, so `_request` is bound at construction (and typed
+`ComplianceRequest`, not `ComplianceRequest | None`). It is the
+idiomatic Python SDK pattern when a field is set at construction and
+needs to be available to message handlers (queries, signals, updates)
+that may run before `run()` would have had a chance to assign it.
 
 ### TODO 10b: Branch `run` on risk level
 
@@ -142,7 +150,6 @@ LOW and HIGH return immediately, MEDIUM sleeps then waits.
 ```python
 @workflow.run
 async def run(self, request: ComplianceRequest) -> ComplianceResult:
-    self._request = request
     self._auto_result = await workflow.execute_activity(
         check_compliance,
         request,
@@ -157,9 +164,16 @@ async def run(self, request: ComplianceRequest) -> ComplianceResult:
     return self._review_result
 ```
 
+`request` is passed into `run()` because that's where the workflow body
+executes. It is also already on `self._request` thanks to
+`@workflow.init`, which is what `review` will read from when an Update
+arrives.
+
 The `sleep(10)` is for the durability demo: it gives you a chance to
 kill and restart the Compliance Worker mid-pause and watch the
-workflow resume.
+workflow resume. `wait_condition` is itself durable, so the
+`sleep(10)` is purely pedagogical timing for the manual kill/restart
+window.
 
 ### TODO 10c: Add the Update handler and validator
 
@@ -188,12 +202,16 @@ The validator is what makes this Update **safe**. Without it, a
 duplicate review submission could overwrite the first decision, or a
 review for a non-MEDIUM transaction could silently succeed. The
 validator runs synchronously in the workflow context before the
-Update is accepted. If it raises, the Update is rejected and the
-workflow state is unchanged.
+Update is accepted. If it raises, the Update is rejected, the
+workflow state is unchanged, and **no event is written to History
+at all**. The rejection writes nothing to History; the Accepted,
+Completed, and Rejected events are all skipped. That is what
+"validate before accept" buys you: a rejected Update leaves no
+trace.
 
 ## Step 2: Apply TODOs 11a–11b in `compliance/service_handler.py`
 
-Open `compliance/service_handler.py`. Two TODO 11 markers — one above
+Open `compliance/service_handler.py`. Two TODO 11 markers: one above
 the imports (TODO 11a), and one inside the `submit_review` body
 (TODO 11b).
 
@@ -215,7 +233,7 @@ Replace the `pass` body with the real Update sender:
 client = nexus.client()
 handle: WorkflowHandle = client.get_workflow_handle_for(
     ComplianceWorkflow.run,
-    workflow_id=f"compliance-{input.transaction_id}",
+    workflow_id=f"compliance-ch06-{input.transaction_id}",
 )
 return await handle.execute_update(
     ComplianceWorkflow.review,
@@ -227,8 +245,9 @@ What is going on:
 
 - `nexus.client()` returns the Temporal Client the Compliance Worker
   was initialized with. The handler is allowed to use it because
-  sync handlers are not subject to workflow determinism rules; they
-  are ordinary async Python. That Client is bound to
+  sync Nexus operation handlers run outside workflow context, so they
+  are ordinary async Python and not subject to workflow determinism
+  rules. That Client is bound to
   `compliance-namespace`, which is the right namespace for this
   Update: the caller workflow lives in `payments-namespace`, but the
   `ComplianceWorkflow` we are sending the Update to lives in
@@ -236,10 +255,15 @@ What is going on:
 - `client.get_workflow_handle_for(ComplianceWorkflow.run, ...)`
   produces a typed handle to the running compliance workflow,
   identified by the same workflow ID the async handler used in
-  Chapter 5 (`compliance-{transaction_id}`).
+  this chapter (`compliance-ch06-{transaction_id}`).
 - `handle.execute_update(ComplianceWorkflow.review, ...)` is a
   synchronous request: it sends the Update, runs the validator, runs
-  the handler, and returns the handler's return value.
+  the handler, and returns the handler's return value. Internally
+  this is shorthand for `start_update(..., wait_for_stage=COMPLETED)`;
+  if you only need to know the validator passed and do not want to
+  block on the handler, `start_update(..., wait_for_stage=ACCEPTED)`
+  is an alternative that waits for Temporal to durably accept the
+  Update without blocking on its result.
 
 The whole `submit_review` sync handler completes in well under 10
 seconds. **The workflow runs as long as it needs to; the sync handler
@@ -278,7 +302,7 @@ class ReviewCallerWorkflow:
         return await nexus_client.execute_operation(
             ComplianceNexusService.submit_review,
             request,
-            schedule_to_close_timeout=timedelta(seconds=10),
+            schedule_to_close_timeout=timedelta(seconds=60),
         )
 ```
 
@@ -341,7 +365,7 @@ What you should see:
 - TXN-A completes immediately (LOW risk).
 - The starter then moves on to TXN-B and **blocks**. The terminal
   sits on the `execute_workflow` call. On the Compliance side,
-  `compliance-TXN-B` ran the auto-check (returned MEDIUM), slept for
+  `compliance-ch06-TXN-B` ran the auto-check (returned MEDIUM), slept for
   10 seconds, and is now waiting on `wait_condition`. Nothing will
   unblock it until the review arrives.
 
@@ -370,21 +394,25 @@ moves on to TXN-C, which declines as HIGH risk, and exits.
 Click the
 [button label="Temporal UI" background="#444CE7"](tab-5) tab. Use the
 namespace selector at the top of the left navigation to switch to
-`compliance-namespace` and open `compliance-TXN-B`. In the Event
+`compliance-namespace` and open `compliance-ch06-TXN-B`. In the Event
 History, find:
 
 - `WorkflowExecutionUpdateAccepted` (the validator passed)
 - `WorkflowExecutionUpdateCompleted` (the handler returned)
 
 Now use the same selector to switch to `payments-namespace` and open
-`payment-TXN-B`. The Nexus operation still shows three events on the
+`payment-ch06-TXN-B`. The Nexus operation still shows three events on the
 Payments-side history (`Scheduled`, `Started`, `Completed`), but the
 gap between `Started` and `Completed` is much wider than the gap for
 TXN-A. **That gap is the time the workflow spent waiting for human
 review.**
 
 There is also a separate workflow on the Payments side called
-`review-TXN-B` (the `ReviewCallerWorkflow`'s execution). It has its
+`review-TXN-B-<uuid>` (the `ReviewCallerWorkflow`'s execution; the
+review starter appends a UUID so each review has a unique workflow ID).
+The long-running compliance workflow ID stays stable across reviews;
+only the review starter wrapper gets a UUID suffix, since each review
+is a fresh caller-side execution. It has its
 own three-event Nexus pattern for the `submit_review` Operation.
 
 ## Step 9 (optional): Durability test
@@ -404,10 +432,6 @@ flows through Nexus into the running compliance workflow, and the
 workflow resumes with the reviewer's outcome. The whole thing was
 done with one Update handler, one validator, one sync Nexus handler
 that forwards to the Update, and one short caller workflow.
-
-In Chapter 7 you switch from the happy path to the **lifecycle path**:
-cancellation, retryable and non-retryable errors, and the per-pair
-circuit breaker. Same handler, several new failure modes.
 
 > [!TIP]
 > Troubleshooting:
