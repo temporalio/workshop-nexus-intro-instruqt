@@ -37,11 +37,14 @@ body,
   font-feature-settings: 'ss01', 'cv11';
   color: var(--temporal-text);
   background: var(--temporal-bg);
-  padding: 1.5rem 2.5rem 1.25rem;
+  /* Bottom padding protects the lower-third safe zone above the footer.
+     Slides that crowd this zone are a signal to cut content, not to shrink the safe zone. */
+  padding: 1.5rem 2.5rem 3rem;
   height: 100%;
   width: 100%;
   box-sizing: border-box;
-  font-size: 1.15rem;
+  /* PPT-equivalent body size: 22pt. Slidev canvas (980px) ~= PPT canvas (960pt), 1rem = 16px. */
+  font-size: 1.375rem;
 }
 
 .slidev-layout h1,
@@ -56,18 +59,19 @@ body,
 }
 
 .slidev-layout h1 {
-  font-size: 2.4rem;
-  margin: 0 0 0.5rem;
+  /* PPT-equivalent: 48pt title. */
+  font-size: 3rem;
+  margin: 0 0 1.5rem;
 }
 
 .slidev-layout h2 {
-  font-size: 1.75rem;
+  font-size: 2.2rem;
   font-weight: 300;
   margin: 0 0 0.5rem;
 }
 
 .slidev-layout h3 {
-  font-size: 1.35rem;
+  font-size: 1.7rem;
   font-weight: 400;
   color: var(--temporal-lavender);
   margin: 0 0 0.4rem;
@@ -79,7 +83,8 @@ body,
   line-height: 1.35;
   color: var(--temporal-text);
   margin: 0.18rem 0;
-  font-size: 1.15rem;
+  /* PPT-equivalent: 22pt body. */
+  font-size: 1.375rem;
 }
 
 .slidev-layout p:first-child { margin-top: 0; }
@@ -172,9 +177,12 @@ body,
 
 /* Footer pinned to bottom of layout via flex parent; no absolute positioning
    so content above can claim whatever vertical space it needs without overlap.
-   The solid-ish backdrop keeps it readable even if a stray element squeezes past. */
+   The solid-ish backdrop keeps it readable even if a stray element squeezes past.
+   margin-bottom is negative so the footer extends past the layout's padding-bottom
+   and sits closer to the canvas edge. Content above the footer is unaffected. */
 .temporal-footer {
   margin-top: auto;
+  margin-bottom: -1.875rem;
   padding: 0.6rem 0 0;
   display: flex;
   justify-content: space-between;

@@ -53,8 +53,8 @@ At the end of Chapter 1, the learner completes a 3-minute scenario-based quiz de
 | #   | Activity                                                                | Type     | Covers objectives | Time (min) |
 | :-- | :---------------------------------------------------------------------- | :------- | :---------------- | ---------: |
 | 1.1 | The cross-team integration problem and shared blast radius              | Lecture  | 1.1               |          5 |
-| 1.2 | The four Nexus building blocks: Service, Operation, Endpoint, Registry  | Lecture  | 1.2               |          5 |
-| 1.3 | Run the monolith and feel the problem                                   | Exercise | 1.4               |          7 |
+| 1.2 | Run the monolith and feel the problem                                   | Exercise | 1.4               |          7 |
+| 1.3 | The four Nexus building blocks: Service, Operation, Endpoint, Registry  | Lecture  | 1.2               |          5 |
 | 1.4 | **Quiz:** Pick the integration pattern (Comp 1 assessment)              | Quiz     | 1.2, 1.3, 1.4, 1.5 |        3 |
 
 ---
@@ -251,8 +251,8 @@ Welcome -> Ch 1 -> Ch 2 -> Ch 3 -> Ch 4 -> BREAK -> Ch 5 -> Ch 6 -> Ch 7 -> Poly
 | 9:25 - 9:45   | **Ch 2**: The Nexus Service contract                                          |    8 | 12 |
 | 9:45 - 10:15  | **Ch 3**: Sync handlers, Worker wiring, Endpoint                              |   12 | 18 |
 | 10:15 - 10:40 | **Ch 4**: Calling Nexus from a caller Workflow                                |    8 | 17 |
-| 10:40 - 11:10 | **Break**                                                                     |      |    |
-| 11:10 - 11:30 | **Ch 5**: Async Operations (workflow-backed handler)                          |    7 | 13 |
+| 10:40 - 11:00 | **Ch 5**: Async Operations (workflow-backed handler)                          |    7 | 13 |
+| 11:00 - 11:30 | **Break**                                                                     |      |    |
 | 11:30 - 11:55 | **Ch 6**: Updates Through Nexus (human-in-the-loop)                           |    8 | 17 |
 | 11:55 - 12:15 | **Ch 7**: Lifecycle control: cancellation, errors, circuit breaker            |    8 | 12 |
 | 12:15 - 12:20 | **Polyglot connector**: same Service, Java handler                            |    5 |    |

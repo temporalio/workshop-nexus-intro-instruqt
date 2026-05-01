@@ -30,17 +30,19 @@ The deck is the **interactive layer**. The presenter weaves between three surfac
 2. **AhaSlides** for warmups, knowledge checks, polls, and the final leaderboard.
 3. **Instruqt** for the hands-on coding exercises.
 
-The AhaSlides deck advances slide by slide on the presenter's screen. Attendees join once at `ahaslides.com/O8RSE` (or scan the QR code) and stay on that browser tab for the full 3.5 hours. Their session persists across all 38 slides, so the **leaderboard at slide 19 (halftime)** and **slide 35 (final)** show cumulative scores from every graded item up to that point.
+The AhaSlides deck advances slide by slide on the presenter's screen. Attendees join once at `ahaslides.com/O8RSE` (or scan the QR code) and stay on that browser tab for the full 3.5 hours. Their session persists across all 38 slides, so the **leaderboard at slide 23 (halftime)** and **slide 35 (final)** show cumulative scores from every graded item up to that point.
 
 ### Trigger pattern
 
-For each chapter, the presenter:
+The default per-chapter pattern:
 1. Opens the chapter's Slidev deck and frames the problem.
 2. Runs the **AhaSlides warmup** (poll, word cloud, or scale) before introducing the concept.
 3. Continues the Slidev lecture.
 4. Switches to Instruqt for the exercise.
 5. Returns to AhaSlides for the **chapter knowledge check** (graded quiz).
 6. Returns to Slidev for the chapter wrap.
+
+**Chapter 1 deviates from this pattern intentionally.** The Ch 1 lab ("Run the Monolith") runs *before* the Nexus solution is introduced, so the room feels the architecture before being told what's wrong with it. The order for Ch 1 is: frame the problem → AhaSlides warmup poll → Instruqt lab → Slidev solution lecture → AhaSlides graded quiz → Slidev review.
 
 ## Slide-by-slide integration guide
 
@@ -68,7 +70,7 @@ Run this block **after** Slidev activities 1.1 (cross-team problem) and 1.2 (fou
 | 11 | Short answer | "Maximum sync handler runtime, in seconds?" (10) | 1.5 |
 | 12 | Short answer | "Maximum async Schedule-to-Close on Temporal Cloud, in days?" (60) | 1.5 |
 
-After slide 12, return to Slidev for the chapter recap. Do **not** show a leaderboard yet; the halftime board is at slide 19.
+After slide 12, return to Slidev for the chapter recap. Do **not** show a leaderboard yet; the halftime board is at slide 23.
 
 ### Chapter 2: Service contract (Slides 13 to 14), maps to Slidev activity 2.1, 2.2
 
@@ -84,29 +86,31 @@ After slide 12, return to Slidev for the chapter recap. Do **not** show a leader
 | 15 | Pick answer multi (graded) | "When is a sync Nexus handler the right tool?" | Run after the "10s deadline" lecture beat. |
 | 16 | Pick answer (graded) | "Your sync handler routinely takes 9.8s. What's the safe move?" (Convert to async) | Sets up the natural transition to Chapter 5. |
 
-### Chapter 4: Caller workflow and Event History (Slides 17 to 19), maps to Slidev activity 4.1, 4.2, then halftime leaderboard
+### Chapter 4: Caller workflow and Event History (Slides 17 to 18), maps to Slidev activity 4.1, 4.2
 
 | # | Type | Prompt | When to trigger |
 | :- | :--- | :----- | :-------------- |
 | 17 | Pick answer (graded) | "How many Nexus events on a sync call?" (2) | After the Slidev "two-event sync pattern" beat. |
 | 18 | Match pairs (graded) | "Match the Event History event to what it means." | After Instruqt exercise; reinforces the events they just witnessed. |
-| 19 | **Leaderboard** | Halftime standings | Last thing before the break. Celebrates top 3, builds tension for the second half. |
 
-### Pre-break (Slides 20 to 21), maps to course-plan Break (10:40)
+### Chapter 5: Async operations (Slides 19 to 22), maps to Slidev activity 5.1, 5.2, 5.3, 5.4
 
-| # | Type | Prompt | When to trigger |
-| :- | :--- | :----- | :-------------- |
-| 20 | Word cloud | "What's clicking? One word." | Quick pulse check before the break. |
-| 21 | Q&A | "Drop your questions for after the break." | Leave this open during the break. Attendees submit; presenter triages and answers on return. |
-
-### Chapter 5: Async operations (Slides 22 to 25), maps to Slidev activity 5.1, 5.2, 5.3, 5.4
+Chapter 5 lands **before** the break. Finishing it pre-break means the halftime leaderboard at slide 23 reflects async exercise points, which raises the energy going into break.
 
 | # | Type | Prompt | When to trigger |
 | :- | :--- | :----- | :-------------- |
-| 22 | Correct order (graded) | "Async Operation lifecycle: Scheduled, Started, Completed." | After Slidev 5.1 (three-event async lifecycle). |
-| 23 | Pick answer (graded) | "Which timeout governs total handler runtime?" (Schedule-to-Close) | After Slidev 5.3 (the three timeouts). |
-| 24 | Pick answer (graded) | "Why does WorkflowIDConflictPolicy.USE_EXISTING matter on retry?" | Same chapter, same beat as the timeouts. |
-| 25 | Scale (1 to 5) | "Could you pick the right timeout in production tomorrow?" | Self-assessment. If average is low, presenter spends extra time on the timeout decision tree. |
+| 19 | Correct order (graded) | "Async Operation lifecycle: Scheduled, Started, Completed." | After Slidev 5.1 (three-event async lifecycle). |
+| 20 | Pick answer (graded) | "Which timeout governs total handler runtime?" (Schedule-to-Close) | After Slidev 5.3 (the three timeouts). |
+| 21 | Pick answer (graded) | "Why does WorkflowIDConflictPolicy.USE_EXISTING matter on retry?" | Same chapter, same beat as the timeouts. |
+| 22 | Scale (1 to 5) | "Could you pick the right timeout in production tomorrow?" | Self-assessment. If average is low, presenter spends extra time on the timeout decision tree. |
+
+### Halftime and break (Slides 23 to 25), maps to course-plan Break (11:00 to 11:30)
+
+| # | Type | Prompt | When to trigger |
+| :- | :--- | :----- | :-------------- |
+| 23 | **Leaderboard** | Halftime standings | Last thing before the break. Celebrates top 3, builds tension for the second half. |
+| 24 | Word cloud | "What's clicking? One word." | Quick pulse check at the start of the break. |
+| 25 | Q&A | "Drop your questions for after the break." | Leave this open during the break. Attendees submit; presenter triages and answers on return. |
 
 ### Chapter 6: Updates through Nexus (Slides 26 to 28), maps to Slidev activity 6.1, 6.2, 6.3
 
@@ -155,27 +159,28 @@ After slide 12, return to Slidev for the chapter recap. Do **not** show a leader
 ```mermaid
 flowchart TD
     Welcome[Welcome 9:00 to 9:05] --> AhaW[AhaSlides 1 to 5]
-    AhaW --> Slidev1[Slidev Ch 1 lecture]
-    Slidev1 --> AhaQ1[AhaSlides 6 to 12: Comp 1 graded]
-    AhaQ1 --> Inst1[Instruqt Ch 1 lab]
+    AhaW --> Slidev1Frame[Slidev Ch 1: frame the problem]
+    Slidev1Frame --> Inst1[Instruqt Ch 1 lab: run the monolith]
+    Inst1 --> Slidev1Sol[Slidev Ch 1: introduce Nexus]
+    Slidev1Sol --> AhaQ1[AhaSlides 6 to 12: Comp 1 graded]
 
-    Inst1 --> Slidev2[Slidev Ch 2 lecture]
+    AhaQ1 --> Slidev2[Slidev Ch 2 lecture]
     Slidev2 --> AhaC2[AhaSlides 13 to 14]
     AhaC2 --> Inst2[Instruqt Ch 2 lab]
 
     Inst2 --> Slidev3[Slidev Ch 3 to 4 lecture]
     Slidev3 --> AhaC34[AhaSlides 15 to 18]
     AhaC34 --> Inst34[Instruqt Ch 3 to 4 lab]
-    Inst34 --> Half[AhaSlides 19: halftime board]
+
+    Inst34 --> Slidev5[Slidev Ch 5 lecture]
+    Slidev5 --> AhaC5[AhaSlides 19 to 22]
+    AhaC5 --> Inst5[Instruqt Ch 5 lab]
+    Inst5 --> Half[AhaSlides 23: halftime board]
 
     Half --> Break[BREAK]
-    Break --> AhaPre[AhaSlides 20 to 21: pulse + Q&A parking lot]
+    Break --> AhaPre[AhaSlides 24 to 25: pulse + Q&A parking lot]
 
-    AhaPre --> Slidev5[Slidev Ch 5 lecture]
-    Slidev5 --> AhaC5[AhaSlides 22 to 25]
-    AhaC5 --> Inst5[Instruqt Ch 5 lab]
-
-    Inst5 --> Slidev6[Slidev Ch 6 lecture]
+    AhaPre --> Slidev6[Slidev Ch 6 lecture]
     Slidev6 --> AhaC6[AhaSlides 26 to 28]
     AhaC6 --> Inst6[Instruqt Ch 6 lab]
 

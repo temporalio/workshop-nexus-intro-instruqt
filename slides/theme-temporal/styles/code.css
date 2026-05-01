@@ -6,7 +6,8 @@
 .slidev-layout pre code {
   font-family: 'Noto Sans Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-weight: 400;
-  font-size: 0.95rem;
+  /* PPT-equivalent: 22pt code default. Per-slide overrides shrink dense blocks. */
+  font-size: 1.375rem;
   line-height: 1.4;
   letter-spacing: 0;
 }
@@ -27,6 +28,7 @@
   color: var(--temporal-lavender);
   padding: 0.08em 0.4em;
   border-radius: 0.3rem;
-  font-size: 1.05rem;
+  /* Slightly smaller than 22pt body so inline code reads as differentiated. */
+  font-size: 1.2rem;
   border: 1px solid rgba(124, 58, 237, 0.25);
 }

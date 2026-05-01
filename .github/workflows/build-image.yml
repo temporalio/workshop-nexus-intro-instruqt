@@ -2,18 +2,16 @@ name: Build sandbox image
 
 on:
   push:
-    branches: [main, init]
+    branches: [main]
     paths:
       - "docker/**"
       - ".github/workflows/build-image.yml"
-  repository_dispatch:
-    types: [code-repo-updated]
   workflow_dispatch:
     inputs:
       code_ref:
         description: "Ref of workshop-nexus-intro-code to build against (branch, tag, or sha)"
         required: false
-        default: "init"
+        default: "main"
 
 jobs:
   build:
