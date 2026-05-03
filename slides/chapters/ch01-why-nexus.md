@@ -585,7 +585,7 @@ Nexus has two constraints that affect design choices.
 ---
 layout: exercise
 minutes: 2
-heading: Durable Activity
+heading: Durable RPC
 ---
 
 **Watch a Nexus-connected system survive a Worker crash.**
