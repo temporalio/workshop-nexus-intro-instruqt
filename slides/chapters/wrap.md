@@ -326,6 +326,7 @@ layout: default
 
 <v-clicks>
 
+- **Evaluate**: [`temporal.io/nexus`](https://temporal.io/nexus)
 - **Docs**: [`docs.temporal.io/nexus`](https://docs.temporal.io/nexus)
 - **Temporal Cloud-specific Nexus**: [`docs.temporal.io/cloud/nexus`](https://docs.temporal.io/cloud/nexus). Cross-account and cross-region considerations.
 - **Versioning**: Service contract changes are an additive-and-rollout problem. [`docs.temporal.io/worker-versioning`](https://docs.temporal.io/worker-versioning) helps on the workflow-code side.
