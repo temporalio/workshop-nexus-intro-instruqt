@@ -212,7 +212,7 @@ layout: default
 
 # HandlerError Types
 
-`HandlerError` carries a **type**. Retryability follows the type:
+`HandlerError` carries a **type**. Retryability follows the type (default/untrapped error is `INTERNAL`):
 
 | Non-retryable | Retryable |
 | :--- | :--- |
