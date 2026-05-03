@@ -379,7 +379,7 @@ The clock starts at the caller's History Service. Your handler code only runs af
 <v-clicks>
 
 - **Network hop.** Caller's Service to handler's, possibly cross-region.
-- **Matching.** A Worker has to be polling. Sync-match is fast; async-match writes to persistence first.
+- **Matching.** A Worker has to be polling. Sync-match is fast and today Nexus only sync matches.
 - **Schedule-to-Start latency.** Target 150ms p95. Without enough pollers, tasks queue.
 - **Handler code + outbound calls.** DB reads, downstream APIs, and `nexus.client()` calls share the budget.
 
