@@ -240,13 +240,15 @@ temporal operator nexus endpoint list
 temporal operator nexus endpoint get --name compliance-endpoint
 ```
 
-The `get` output should include the Markdown description from
-`compliance-endpoint.md` under the `Description` field.
+Both commands surface the Markdown description from
+`compliance-endpoint.md` under the `Description` field. `list` is the
+quick at-a-glance view; `get` is the full detail view for a single
+Endpoint.
 
 ## Step 4: Find the Endpoint in the Web UI
 
 Click the [button label="Temporal UI" background="#444CE7"](tab-2)
-tab. In the left navigation, click **Nexus Endpoints** (or browse to
+tab. In the left navigation, click **Nexus** (or browse to
 `/nexus/endpoints` directly).
 
 You should see a single Endpoint row, `compliance-endpoint`, targeting

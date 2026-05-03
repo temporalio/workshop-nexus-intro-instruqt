@@ -90,7 +90,7 @@ moment Compliance becomes its own team:
   coordinating a release with Payments.
 - Compliance touches data Payments should not see. Putting it in the
   same Worker means the same process holds both PCI scope and customer
-  KYC scope.
+  KYC (Know Your Customer) scope.
 - A bad compliance deploy takes down the Payments Worker. There is no
   blast-radius boundary.
 - Compliance wants to migrate to Java. Today they cannot, because they
@@ -162,7 +162,7 @@ The starter runs three transactions back to back:
 - **TXN-B**: a $12,000 international consulting fee (US to UK). The
   rule-based compliance check classifies it as MEDIUM risk because the
   amount exceeds the $10,000 threshold, and auto-approves it with an
-  AML monitoring note.
+  AML (Anti-Money Laundering) monitoring note.
 - **TXN-C**: a $75,000 large capital transfer (US to US). Trips the
   over-$50,000 threshold rule and declines.
 

@@ -124,6 +124,18 @@ Open `payments/workflows.py` in the
 markers: one above the `check_compliance` import (TODO 4a), and one
 above the existing activity call (TODO 4b).
 
+### TODO 4a: Remove the unused activity import
+
+At the top of the file, delete the line:
+
+```python
+from compliance.activities import check_compliance
+```
+
+After you replace the activity call below, the file no longer
+references `check_compliance` directly. Your editor or `ruff` will
+flag it as unused if you forget.
+
 ### TODO 4b: Replace the activity call with a Nexus call
 
 The current code calls compliance as an Activity. Replace the entire
@@ -165,17 +177,6 @@ Two things to notice:
   attempts until `schedule_to_close` exhausts. There are two more
   timeouts (`schedule_to_start`, `start_to_close`) that matter once
   the handler runs as a workflow.
-
-### TODO 4a: Remove the unused activity import
-
-After TODO 4b, the file no longer references `check_compliance`
-directly. Delete the line:
-
-```python
-from compliance.activities import check_compliance
-```
-
-Your editor or `ruff` will flag it as unused if you forget.
 
 ## Step 2: Apply TODOs 5a–5b in `payments/worker.py`
 
@@ -223,17 +224,11 @@ Click the
 uv run python -m payments.worker
 ```
 
-The startup banner now includes a `Nexus:` line:
-
-```bash,nocopy
-  Nexus: ComplianceNexusService -> compliance-endpoint
-```
-
-That line just documents which Service contract the workflows on this
-Worker will call against which Endpoint name. (The Nexus client itself
-is created inside the workflow at runtime, not registered on the
-Worker.) The Activities list should be `validate_payment,
-execute_payment` only.
+The Activities list registered on this Worker is now
+`validate_payment, execute_payment` only; `check_compliance` is gone.
+The Worker has no Nexus-specific registration step on the caller
+side: a Nexus client is created inside the workflow at runtime, not
+registered on the Worker.
 
 ## Step 5: Run the starter
 

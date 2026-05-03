@@ -249,16 +249,19 @@ Welcome -> Ch 1 -> Ch 2 -> Ch 3 -> Ch 4 -> BREAK -> Ch 5 -> Ch 6 -> Ch 7 -> Poly
 | 9:00 - 9:05   | Welcome and Instruqt smoke test                                               |    5 |    |
 | 9:05 - 9:25   | **Ch 1**: Why Nexus and run the monolith                                      |   10 | 10 |
 | 9:25 - 9:45   | **Ch 2**: The Nexus Service contract                                          |    8 | 12 |
-| 9:45 - 10:15  | **Ch 3**: Sync handlers, Worker wiring, Endpoint                              |   12 | 18 |
-| 10:15 - 10:40 | **Ch 4**: Calling Nexus from a caller Workflow                                |    8 | 17 |
-| 10:40 - 11:00 | **Ch 5**: Async Operations (workflow-backed handler)                          |    7 | 13 |
-| 11:00 - 11:30 | **Break**                                                                     |      |    |
+| 9:45 - 10:00  | **Break**                                                                     |      |    |
+| 10:00 - 10:30 | **Ch 3**: Sync handlers, Worker wiring, Endpoint                              |   12 | 18 |
+| 10:30 - 10:55 | **Ch 4**: Calling Nexus from a caller Workflow                                |    8 | 17 |
+| 10:55 - 11:15 | **Ch 5**: Async Operations (workflow-backed handler)                          |    7 | 13 |
+| 11:15 - 11:30 | **Halftime + Break**                                                          |      |    |
 | 11:30 - 11:55 | **Ch 6**: Updates Through Nexus (human-in-the-loop)                           |    8 | 17 |
 | 11:55 - 12:15 | **Ch 7**: Lifecycle control: cancellation, errors, circuit breaker            |    8 | 12 |
 | 12:15 - 12:20 | **Polyglot connector**: same Service, Java handler                            |    5 |    |
 | 12:20 - 12:30 | Wrap and Q&A                                                                  |   10 |    |
 
-**Totals:** 81 min lecture, 99 min exercise, 30 min break, 5 min welcome, 5 min polyglot, 10 min wrap, totaling 210 min. Lecture/exercise ratio about 45/55.
+**Totals:** 81 min lecture, 99 min exercise, 30 min break (15 + 15), 5 min welcome, 5 min polyglot, 10 min wrap, totaling 210 min. Lecture/exercise ratio about 45/55.
+
+The day splits into three blocks. **Block 1 (45 min)**: Welcome + Ch 1 + Ch 2 — set up the problem and define the contract. **Break.** **Block 2 (75 min)**: Ch 3 + Ch 4 + Ch 5 — build the integration end-to-end, from sync handler through the caller swap into async. **Halftime + Break.** **Block 3 (60 min)**: Ch 6 + Ch 7 + Polyglot + Wrap — human-in-the-loop, lifecycle control, polyglot demo, close. The two 15-minute breaks replace the prior single 30-minute break at 11:00.
 
 ## Implementation Notes
 

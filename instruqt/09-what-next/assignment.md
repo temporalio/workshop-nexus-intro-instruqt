@@ -6,11 +6,12 @@ title: What Next - Resources and Going Deeper
 teaser: Reference page for continuing your Nexus journey - documentation, tutorials,
   sample code, and community.
 answers:
-- "Yes"
-- "No"
+- "A typed Service contract plus a Nexus Endpoint"
+- "A shared task queue"
+- "A shared workflow definition"
+- "A shared Worker process"
 solution:
 - 0
-- 1
 difficulty: basic
 timelimit: 1800
 enhanced_loading: false
@@ -119,9 +120,9 @@ from Chapter 8.
 - **Slack**: real-time chat with the Temporal team and other users:
   [`https://temporal.io/slack`](https://temporal.io/slack).
 
-## A small ask
+## One last reflection
 
-Now that you have seen what Nexus can do end to end, we want to know
-whether it is the right tool for the work you are doing.
+Before you wrap up, lock in the central idea of this workshop.
 
-**Do you plan on using Nexus?**
+**What does Nexus let two teams share so that they can call each
+other's Temporal code without sharing a namespace or a codebase?**

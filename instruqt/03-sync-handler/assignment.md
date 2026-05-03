@@ -260,19 +260,6 @@ routed through Nexus yet.**
 That is the expected end-state for Chapter 3. The Compliance Worker is
 a Nexus participant, but no caller has been wired to it.
 
-## Step 6: Confirm both Workers are healthy
-
-Click the [button label="Temporal UI" background="#444CE7"](tab-4)
-tab. Click **Workers** in the left navigation. Switch namespaces with
-the selector at the top.
-
-- In `payments-namespace`, you should see one Worker polling
-  `payments-processing` (the Payments Worker).
-- In `compliance-namespace`, you should see one Worker polling
-  `compliance-risk` (the Compliance Worker).
-
-Both Workers are alive.
-
 ## Key Takeaways
 
 You wrote the synchronous handler that fulfills the `check_compliance`

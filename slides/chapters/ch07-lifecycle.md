@@ -7,7 +7,7 @@ current: ch7
 layout: default
 ---
 
-# What This Chapter Teaches You to Recognize
+# Four Ways Off the Happy Path
 
 A successful Operation flows `Scheduled -> Started -> Completed`.
 
@@ -34,10 +34,21 @@ Each leaves a distinct trace in the caller's Event History or `temporal workflow
 - A successful Operation flows Scheduled to Started to Completed.
   - This is the happy path you saw with TXN-A in Chapter 5.
 - **Build 1** A Nexus Operation can also leave the happy path four ways.
-- **Build 2** Each leaves a distinct trace.
+- **Build 2** Non-retryable failure (`OperationError`).
+  - The first off-ramp. Permanent business-reason failure.
+- **Build 3** Retryable failure (`HandlerError`, with backoff).
+  - The second off-ramp. Transient infrastructure problem.
+- **Build 4** Cancellation (propagating from the caller through the Endpoint to the handler workflow).
+  - The third off-ramp. The caller decides to stop.
+- **Build 5** Circuit breaker (5 retryable errors in a row, breaker opens for 60s).
+  - The fourth off-ramp. The platform stops trying.
+- **Build 6** Each leaves a distinct trace in the caller's Event History or `temporal workflow describe`.
   - Production reflex: when something is wrong, you should know which of the four modes you're looking at.
-  - The exercise is mostly observation: see each mode in the UI and CLI.
+
+## Teaching notes
+
 - The chapter is dense but the framing is simple: four modes, four traces, four production reflexes.
+- The exercise is mostly observation: see each mode in the UI and CLI.
 -->
 
 ---
@@ -90,49 +101,27 @@ layout: default
 
 | Type                | Caller waits until...                        | Use when                                  |
 | :------------------ | :------------------------------------------- | :---------------------------------------- |
-| `ABANDON`           | nothing, returns immediately                 | The caller is being torn down anyway      |
-| `TRY_CANCEL`        | the cancel is **delivered**                  | You want guaranteed delivery, not result  |
-| `WAIT_REQUESTED`    | the handler **acknowledges** the cancel      | Mid-strict: you need a receipt            |
+| `ABANDON`           | nothing, returns immediately                 | Caller is being torn down                 |
+| `TRY_CANCEL`        | the cancel is **delivered**                  | Want guaranteed delivery, not result      |
+| `WAIT_REQUESTED`    | the handler **acknowledges** the cancel      | Mid-strict: need a receipt                |
 | `WAIT_COMPLETED`    | the handler **finishes** (canceled or done)  | Strictest: shutdown order matters         |
 
-<br>
-
 <v-click>
 
-Default is `WAIT_COMPLETED`. The strictest, the slowest, the safest.
+Default is `WAIT_COMPLETED`. Strictest, slowest, safest.
 
 </v-click>
 
-<br>
-
 <v-click>
 
-```mermaid {scale: 0.6}
-flowchart TD
-    A[Caller is being canceled] --> B{Need a result?}
-    B -- No, fire-and-forget --> ABANDON
-    B -- Yes, just delivery --> TRY_CANCEL
-    B -- Yes, handler ack --> WAIT_REQUESTED
-    B -- Yes, handler done --> WAIT_COMPLETED
-```
+**Sync Operations cannot be cancelled.** They hold no operation token. Only async, workflow-backed handlers support cancellation.
 
 </v-click>
 
-<br>
-
-<v-click>
-
-**Sync Nexus Operations cannot be cancelled.** They hold no operation token. Only async, workflow-backed handlers support cancellation. This is one of the reasons Chapter 5's switch to async matters.
-
-</v-click>
-
-<br>
-
-<v-click>
-
-Wire-format aside: at the proto layer, `WAIT_REQUESTED` is named `WAIT_CANCELLATION_REQUESTED`. Replay output and raw event payloads use the longer form.
-
-</v-click>
+<style>
+.slidev-layout table { font-size: 1.1rem; }
+.slidev-layout th, .slidev-layout td { padding: 0.3rem 0.6rem; }
+</style>
 
 <!--
 - Four levels of strictness. ABANDON is least strict; WAIT_COMPLETED is most strict.
@@ -148,7 +137,16 @@ Wire-format aside: at the proto layer, `WAIT_REQUESTED` is named `WAIT_CANCELLAT
 - **Build 1** Default is `WAIT_COMPLETED`. The strictest, the slowest, the safest.
   - Default exists because most callers want correctness over speed.
   - Override the default explicitly when you know the trade-off.
-- Practical examples:
+- **Build 2** Decision flowchart: do you need a result, just delivery, handler ack, or handler completion?
+  - Walk the four branches in order. Each one drops one level of strictness.
+- **Build 3** Sync Nexus Operations cannot be cancelled. They hold no operation token. Only async, workflow-backed handlers support cancellation.
+  - Cancellation rides on the operation token. No token, no cancellation surface.
+- **Build 4** Wire-format aside: at the proto layer, `WAIT_REQUESTED` is named `WAIT_CANCELLATION_REQUESTED`.
+  - Replay output and raw event payloads use the longer form. Your code uses the shorter SDK-side name.
+
+## Teaching notes
+
+- Practical examples for the room:
   - For a caller workflow that's terminating, ABANDON: don't make the shutdown wait.
   - For a payment that needs to know the compliance check truly stopped before retrying, WAIT_COMPLETED.
   - For a UI that shows a "canceling..." state, TRY_CANCEL or WAIT_REQUESTED gives a faster confirmation.
@@ -162,32 +160,57 @@ layout: default
 
 ```python {all|1-3|5-7|all}
 # Permanent failure. No retry. Fails the Operation.
-raise nexusrpc.OperationError("transaction blocked by sanctions list")
+raise nexusrpc.OperationError("blocked by sanctions list")
 
 # Transient failure. Retries with backoff.
 raise nexusrpc.HandlerError("downstream KYC API timed out")
 ```
 
-<br>
-
 <v-clicks>
 
-- **OperationError**: caller sees `NexusOperationFailed` immediately. Workflow ends in `Failed`.
-- **HandlerError**: caller sees `Pending Nexus Operations` with growing attempt count, `BackingOff` state.
+- **OperationError**: caller sees `NexusOperationFailed` immediately. Workflow ends `Failed`.
+- **HandlerError**: caller sees `Pending Nexus Operations`, growing attempts, `BackingOff` state.
 
 </v-clicks>
 
-<br>
-
 <v-click>
 
-**Activity-error analogy.** `OperationError` is `ApplicationError(non_retryable=True)`. `HandlerError` is the regular Activity exception that retries by default.
+Same model as Activity errors. `OperationError` ≈ `ApplicationError(non_retryable=True)`; `HandlerError` ≈ regular retrying exception.
 
 </v-click>
 
-<br>
+<style>
+.slidev-layout pre.shiki,
+.slidev-layout pre code { font-size: 1.0rem; line-height: 1.3; }
+</style>
 
-<v-click>
+<!--
+- The error model maps to the Activity error model. Non-retryable + retryable.
+- **Build 1 (whole code)** Both error types side by side.
+- **Build 2 (lines 1-3, OperationError)** `raise nexusrpc.OperationError("blocked by sanctions list")`
+  - **Permanent** failure. No retry. Fails the Operation immediately.
+  - Use for business-reason failures. "This payment is blocked by sanctions and will never succeed."
+  - Analogue of Activity's `ApplicationError(non_retryable=True)`.
+- **Build 3 (lines 5-7, HandlerError)** `raise nexusrpc.HandlerError("downstream KYC API timed out")`
+  - **Transient** failure. Retries with exponential backoff.
+  - Use for infrastructure problems. "The downstream API is timing out, but it usually works."
+  - Analogue of Activity's regular exceptions, which retry by default.
+- **Build 4 (whole code)**
+- **Build 5** **OperationError**: caller sees `NexusOperationFailed` immediately. Workflow ends in `Failed`.
+- **Build 6** HandlerError: caller sees `Pending Nexus Operations` with growing attempt count, `BackingOff` state.
+- **Build 7** Activity-error analogy. The room already knows the Activity error model. Bridge the analogy explicitly.
+- The HandlerError type taxonomy (BAD_REQUEST etc.) and the "raise INTERNAL for BAD_REQUEST" production warning live on the next slide ("HandlerError Types") since the table doesn't fit here.
+
+## Teaching notes
+
+- If the handler is a workflow, failures can also come from the handler workflow itself failing (workflow-level), separate from `HandlerError` raised inside the Nexus handler. Both surface in the caller's history.
+-->
+
+---
+layout: default
+---
+
+# HandlerError Types
 
 `HandlerError` carries a **type**. Retryability follows the type:
 
@@ -199,15 +222,16 @@ raise nexusrpc.HandlerError("downstream KYC API timed out")
 | `NOT_FOUND` | `UPSTREAM_TIMEOUT` |
 | `NOT_IMPLEMENTED` | |
 
-</v-click>
-
-<br>
-
 <v-click>
 
 Picking the right type is API design. **Raise `INTERNAL` for what is actually `BAD_REQUEST` and callers retry forever** on something that will never succeed.
 
 </v-click>
+
+<style>
+.slidev-layout table { font-size: 1.15rem; }
+.slidev-layout th, .slidev-layout td { padding: 0.3rem 0.6rem; }
+</style>
 
 <!--
 - The error model maps to the Activity error model. Non-retryable + retryable.
@@ -224,29 +248,36 @@ Picking the right type is API design. **Raise `INTERNAL` for what is actually `B
 - **Build 5** **OperationError**: caller sees `NexusOperationFailed` immediately. Workflow ends in `Failed`.
   - Single event in the caller's history: `NexusOperationFailed`. No retry attempts.
   - The caller workflow `Failed` state shows up in the Web UI.
-- **Build 6** **HandlerError**: caller sees `Pending Nexus Operations` with growing attempt count, `BackingOff` state.
+- **Build 6** HandlerError: caller sees `Pending Nexus Operations` with growing attempt count, `BackingOff` state.
   - The Operation goes into `BackingOff` between retries.
   - `temporal workflow describe -w <caller-id>` shows attempt count climbing: 1, 2, 3, ...
   - Same exponential backoff pattern as Activity retries.
-- Note: if the handler is a workflow, failures can also come from the **handler workflow itself failing** (workflow-level), separate from `HandlerError` raised inside the Nexus handler. Both surface in the caller's history.
+- **Build 7** Activity-error analogy. `OperationError` is `ApplicationError(non_retryable=True)`. `HandlerError` is the regular Activity exception that retries by default.
+  - The room already knows the Activity error model. Bridge the analogy explicitly so they don't have to learn a second one.
+- **Build 8** `HandlerError` carries a type. Retryability follows the type.
+  - Walk the table: `BAD_REQUEST`, `UNAUTHENTICATED`, `UNAUTHORIZED`, `NOT_FOUND`, `NOT_IMPLEMENTED` are non-retryable; `RESOURCE_EXHAUSTED`, `INTERNAL`, `UNAVAILABLE`, `UPSTREAM_TIMEOUT` retry.
+- **Build 9** Picking the right type is API design. Raise `INTERNAL` for what is actually `BAD_REQUEST` and callers retry forever on something that will never succeed.
+  - The most expensive error-handling bug is "we miscategorized a permanent failure as transient". Pick the type with intent.
+
+## Teaching notes
+
+- If the handler is a workflow, failures can also come from the handler workflow itself failing (workflow-level), separate from `HandlerError` raised inside the Nexus handler. Both surface in the caller's history.
 -->
 
 ---
 layout: default
 ---
 
-# The Circuit Breaker
+# Spotting a Circuit-Breaker Trip
 
-The breaker prevents one misbehaving handler endpoint from saturating the platform with retries from every caller in the same namespace. Without it, a thundering herd of retries piles up.
+When the breaker opens, here's what it looks like in production.
 
 <br>
 
 <v-clicks>
 
-- After **5 consecutive retryable errors** on the same caller-namespace and Endpoint pair, the breaker opens.
-- **Scope:** per `(caller-Namespace, Endpoint)` pair. Not per workflow, not per Operation.
-- New Operations on that pair go straight to `State: Blocked`.
-- Open for **60 seconds**, then half-open with a single probe. Success closes it. Failure re-opens for another 60.
+- **The diagnostic surface.** `temporal workflow describe -w <caller-id>` shows `Pending Nexus Operations` with `State: Blocked` and `BlockedReason: The circuit breaker is open.`
+- **Recovery is passive.** You don't reset the breaker. The platform half-opens after 60 seconds and probes; fix the underlying handler and the probe succeeds.
 
 </v-clicks>
 
@@ -254,35 +285,28 @@ The breaker prevents one misbehaving handler endpoint from saturating the platfo
 
 <v-click>
 
-Look for `BlockedReason: The circuit breaker is open.` on `temporal workflow describe`.
-
-</v-click>
-
-<br>
-
-<v-click>
-
-**Most circuit breaker trips in the wild are not buggy handlers. They are handler workers that are not running.** Five timed-out requests in a row and the breaker opens.
+**Most circuit-breaker trips in the wild are not buggy handlers. They are handler Workers that are not running.** The Worker pool scaled to zero, the deploy failed, the pod crashed. Five timed-out requests in a row, and the breaker opens.
 
 </v-click>
 
 <!--
-- After **5 consecutive retryable errors** on the same caller-namespace and Endpoint pair, Temporal opens a circuit breaker.
-  - Platform-level protection. You don't configure it.
-  - Scope: per (caller-namespace, Endpoint) pair. Not per workflow, not per Operation.
-- **Build 1** New Operations on that pair go straight to `State: Blocked`.
-  - The Operation never even attempts. Saves Worker capacity on the implementer side.
-  - Caller sees the Operation stuck in Pending with `State: Blocked`.
-- **Build 2** The breaker stays open for **60 seconds**, then transitions to half-open.
-  - Half-open = "let one through to test the water."
-  - 60 seconds is the platform default; not user-tunable today.
-- **Build 3** On the next success, it closes. On another failure, it re-opens.
-  - Standard circuit breaker semantics. Closed = normal. Open = blocking. Half-open = probing.
-- **Build 4** Look for `BlockedReason: The circuit breaker is open.` on `temporal workflow describe`.
+- The mechanism (5 errors on a pair, 60s open, half-open probe) was the dedicated Ch3 slide. Here we look at what a trip surfaces as in operations.
+- **Build 1** The diagnostic surface.
+  - `temporal workflow describe -w <caller-id>` is where this lands. `Pending Nexus Operations` shows the row, `State: Blocked` is the giveaway, `BlockedReason: The circuit breaker is open.` is the explicit string to grep for.
   - This is one of those features you discover during an incident. Recognizing the message saves debugging time.
-- The circuit breaker is the platform's protection against thundering-herd failures.
-  - If the Compliance Worker is down, you don't want every Payments workflow piling up retries.
-  - Five errors and the platform stops trying for a minute. Lets the dependency recover.
+- **Build 2** Recovery is passive.
+  - You don't reset the breaker. The platform half-opens after 60 seconds and probes.
+  - Probe success: closed, normal traffic resumes. Probe failure: another 60s open.
+  - Fix the underlying problem and the breaker takes care of itself.
+- **Build 3** Most trips in the wild are handler Workers not running.
+  - Worker pool scaled to zero, deploy failed, pod crashed. Five timed-out requests in a row and the breaker opens.
+  - This reflex is the same one we landed in Ch3. Reiterating here because it's the production-reflex line worth landing twice.
+
+## Teaching notes
+
+- The Ch3 slide owns the model (state machine, scope, trigger). This slide owns the diagnostic surface and the recovery story.
+- Source for `BlockedReason` string: `docs.temporal.io/nexus/operations#circuit-breaking`.
+- Reiteration of the "Workers not running" reflex from Ch3 is intentional per `feedback-reiterate-not-duplicate`.
 -->
 
 ---
@@ -301,18 +325,17 @@ Full instructions are in the Instruqt tab.
 
 <!--
 - "Inject failures. Watch the lifecycle."
-  - One TODO. They're mostly here to **see** what each lifecycle scenario looks like in the UI and CLI.
-- TODO 13: In the handler, branch on `transaction_id` to raise `OperationError`, `HandlerError`, or trigger cancellation.
-  - The exercise scaffold has the branching skeleton. Their job is to fill in the raises.
-  - For example: `if input.transaction_id.startswith("TXN-FAIL-OP"): raise nexusrpc.OperationError(...)`.
-- Run `python -m payments.lifecycle_starter` to drive each scenario.
-  - The lifecycle starter runs CANCEL, FAIL-OP, FAIL-HANDLER, and CIRCUIT scenarios back-to-back.
-  - Each scenario starts a workflow with a transaction_id that triggers the corresponding handler branch.
-- Observe in the Web UI, then in `temporal workflow describe`.
-  - **Cancel**: caller workflow `payment-ch07-TXN-CANCEL-1` and handler workflow `compliance-ch07-TXN-CANCEL-1` both end in `Canceled` state.
-  - **OperationError**: caller's history shows `NexusOperationFailed` event immediately, workflow ends `Failed`.
-  - **HandlerError**: caller's `Pending Nexus Operations` shows attempt count growing, `State: BackingOff`.
-  - **Circuit breaker**: after ~5 of these, new Operations on that endpoint show `State: Blocked` and `BlockedReason: The circuit breaker is open.`
+
+## Teaching notes
+
+- One TODO. Attendees are mostly here to see what each lifecycle scenario looks like in the UI and CLI.
+- TODO 13: In the handler, branch on `transaction_id` to raise `OperationError`, `HandlerError`, or trigger cancellation. The exercise scaffold has the branching skeleton. Their job is to fill in the raises. For example: `if input.transaction_id.startswith("TXN-FAIL-OP"): raise nexusrpc.OperationError(...)`.
+- Run `python -m payments.lifecycle_starter` to drive each scenario. The lifecycle starter runs CANCEL, FAIL-OP, FAIL-HANDLER, and CIRCUIT scenarios back-to-back. Each scenario starts a workflow with a `transaction_id` that triggers the corresponding handler branch.
+- Observe in the Web UI, then in `temporal workflow describe`:
+  - Cancel: caller workflow `payment-ch07-TXN-CANCEL-1` and handler workflow `compliance-ch07-TXN-CANCEL-1` both end in `Canceled` state.
+  - OperationError: caller's history shows `NexusOperationFailed` event immediately, workflow ends `Failed`.
+  - HandlerError: caller's `Pending Nexus Operations` shows attempt count growing, `State: BackingOff`.
+  - Circuit breaker: after ~5 of these, new Operations on that endpoint show `State: Blocked` and `BlockedReason: The circuit breaker is open.`
 - Most will get through the cancel + OperationError; the rest are gravy.
 -->
 
@@ -322,23 +345,22 @@ layout: section
 
 # Quiz Time
 
-ahaslides.com/O8RSE
+ahaslides.com/NEXUSWS
 
 <!--
 - "Last graded block of the workshop. Four questions. Lock in those production reflexes."
-- AhaSlides match pairs: "Pick your Cancel: ABANDON, TRY_CANCEL, WAIT_REQUESTED, WAIT_COMPLETED."
+- "Last graded block done. Final scoring is locked in. One quick recap, then the fun bit, let's break the language assumption with the polyglot demo. Watch this."
+
+## Teaching notes
+
+- AhaSlides match pairs trigger: "Pick your Cancel: ABANDON, TRY_CANCEL, WAIT_REQUESTED, WAIT_COMPLETED."
   - ABANDON → caller is being torn down anyway.
   - TRY_CANCEL → you want guaranteed delivery, not result.
   - WAIT_REQUESTED → mid-strict, you need a receipt.
   - WAIT_COMPLETED → strictest, shutdown order matters.
-- AhaSlides pick answer: "OperationError vs HandlerError: which one triggers automatic retry?"
-  - Correct: **HandlerError**.
-  - OperationError is permanent (business reason). HandlerError is transient (infra problem). Same model as Activity errors.
-- AhaSlides pick answer: "You see 'State: Blocked / BlockedReason: The circuit breaker is open' in `temporal workflow describe`. What's happening?"
-  - Correct: **The platform has stopped routing new Operations on this caller-namespace + Endpoint pair after 5 consecutive retryable errors.**
-- AhaSlides pick answer: "After how many consecutive errors does the circuit breaker open?"
-  - Correct: **5**.
-- "Last graded block done. Final scoring is locked in. One quick recap, then the fun bit, let's break the language assumption with the polyglot demo. Watch this."
+- AhaSlides pick answer trigger: "OperationError vs HandlerError: which one triggers automatic retry?" Correct: HandlerError. OperationError is permanent (business reason); HandlerError is transient (infra problem). Same model as Activity errors.
+- AhaSlides pick answer trigger: "You see 'State: Blocked / BlockedReason: The circuit breaker is open' in `temporal workflow describe`. What's happening?" Correct: the platform has stopped routing new Operations on this caller-namespace + Endpoint pair after 5 consecutive retryable errors.
+- AhaSlides pick answer trigger: "After how many consecutive errors does the circuit breaker open?" Correct: 5.
 -->
 
 ---

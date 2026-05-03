@@ -199,25 +199,27 @@ Delete that line.
 
 ## Step 3: Apply TODO 8 in `compliance/worker.py`
 
-Open `compliance/worker.py`. Find the TODO 8 comment in the
-`Worker(...)` constructor. Add `workflows` and `activities` arguments
-alongside the existing `nexus_service_handlers`:
+Open `compliance/worker.py`. The `with
+concurrent.futures.ThreadPoolExecutor(...)` block, the prints, and
+`await worker.run()` are already in place. You only need to register
+three things on the existing `Worker(...)` call.
+
+Find the TODO 8 comment. Add three arguments to the `Worker(...)` call
+below it, alongside `task_queue` and `nexus_service_handlers`:
 
 ```python
-with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
-    worker = Worker(
-        client,
-        task_queue=TASK_QUEUE,
-        workflows=[ComplianceWorkflow],
-        activities=[check_compliance],
-        activity_executor=executor,
-        nexus_service_handlers=[ComplianceNexusServiceHandler()],
-    )
+workflows=[ComplianceWorkflow],
+activities=[check_compliance],
+activity_executor=executor,
 ```
 
-The activity is sync (it calls `print` for logging), so use the
-ThreadPoolExecutor. The Compliance Worker is now a full Temporal
-Worker: workflows, activities, **and** Nexus handlers.
+Order doesn't matter; placement does. They go inside the `Worker(`
+parentheses, at the same indentation as `task_queue=TASK_QUEUE,`.
+
+The activity is synchronous (it calls `print` for logging), so it has
+to run on a thread pool. That is what `activity_executor=executor`
+wires up. The Compliance Worker is now a full Temporal Worker:
+workflows, activities, **and** Nexus handlers.
 
 ## Step 4: Apply TODO 9 in `payments/workflows.py`
 
@@ -267,13 +269,19 @@ terminal:
 uv run python -m compliance.worker
 ```
 
-The startup banner now shows three things registered:
+The startup banner is intentionally minimal in this chapter:
 
 ```bash,nocopy
   Compliance Worker started on: compliance-risk
   Namespace: compliance-namespace
-  Registered: ComplianceWorkflow, check_compliance, ComplianceNexusServiceHandler
 ```
+
+There is no `Registered:` line this time. The Worker is hosting
+`ComplianceWorkflow`, the `check_compliance` activity, **and**
+`ComplianceNexusServiceHandler` after TODO 8, but the print block
+only reports task queue and namespace. Confirm the registrations
+worked by running the starter in the next step; if anything is
+missing the run will fail with a clear error.
 
 ## Step 6: Start the Payments Worker
 
@@ -330,16 +338,34 @@ inspected, queried, or cancelled independently of the caller.
 
 ## Step 9 (optional): Durability test
 
-If you have time, kill the Compliance Worker mid-flight:
+If you have time, prove the handler workflow is durable by stopping
+the Compliance Worker **before** any new transactions land.
 
-1. Restart the starter.
-2. Within a couple of seconds, hit `Ctrl+C` in the Compliance Worker
-   terminal.
-3. Wait a few seconds, then restart the Worker.
+1. Click the
+   [button label="Compliance Worker" background="#444CE7"](tab-1)
+   terminal and hit `Ctrl+C` to stop the Worker.
+2. Click the [button label="Starter" background="#444CE7"](tab-3)
+   terminal and run the starter again:
 
-The handler workflows resume from where they stopped, the activities
-complete, and the Nexus operation reports Completed. The caller never
-notices the worker restart.
+   ```bash,run
+   uv run python -m payments.starter
+   ```
+
+   The starter blocks. In the Web UI you can see the caller's
+   `payment-ch05-*` workflows sitting at `NexusOperationScheduled`
+   with no Started event yet, and no `compliance-ch05-*` workflows
+   on the Compliance side because nothing is polling
+   `compliance-risk`.
+3. Restart the Compliance Worker:
+
+   ```bash,run
+   uv run python -m compliance.worker
+   ```
+
+The handler workflows start as soon as the Worker comes back, run to
+completion, and the starter unblocks with the same three results. The
+caller never noticed the gap; the Nexus machinery held the request
+durably until a Worker was available.
 
 ## Key Takeaways
 

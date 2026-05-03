@@ -65,7 +65,7 @@ Run this block **after** Slidev activities 1.1 (cross-team problem) and 1.2 (fou
 | 6 | Pick answer | "Two teams, two namespaces, an audit boundary between them." (correct: Nexus) | 1.3, 1.4 |
 | 7 | Pick answer | "Same namespace, sibling workflow you control end-to-end." (correct: Child Workflow) | 1.3 |
 | 8 | Pick answer | "Third-party HTTP API from inside a workflow." (correct: Activity) | 1.3 |
-| 9 | Pick answer (multi) | "Which of these are Nexus building blocks?" (correct: Service, Operation, Endpoint, Registry) | 1.2 |
+| 9 | Pick answer (multi) | "Which of these are Nexus building blocks?" (correct: Service, Operation, Endpoint, Registry; distractors: Channel, Topic) | 1.2 |
 | 10 | Match pairs | "Building-Block Bingo: match each primitive to its job." | 1.2 |
 | 11 | Short answer | "Maximum sync handler runtime, in seconds?" (10) | 1.5 |
 | 12 | Short answer | "Maximum async Schedule-to-Close on Temporal Cloud, in days?" (60) | 1.5 |
@@ -83,7 +83,7 @@ After slide 12, return to Slidev for the chapter recap. Do **not** show a leader
 
 | # | Type | Prompt | When to trigger |
 | :- | :--- | :----- | :-------------- |
-| 15 | Pick answer multi (graded) | "When is a sync Nexus handler the right tool?" | Run after the "10s deadline" lecture beat. |
+| 15 | Pick answer multi (graded) | "When is a sync Nexus handler the right tool?" (correct: Forwarding to a Workflow, Deterministic in-process compute, Reliable downstream Temporal infrastructure) | Run after the "10s deadline" lecture beat. |
 | 16 | Pick answer (graded) | "Your sync handler routinely takes 9.8s. What's the safe move?" (Convert to async) | Sets up the natural transition to Chapter 5. |
 
 ### Chapter 4: Caller workflow and Event History (Slides 17 to 18), maps to Slidev activity 4.1, 4.2
@@ -124,7 +124,7 @@ Chapter 5 lands **before** the break. Finishing it pre-break means the halftime 
 
 | # | Type | Prompt | When to trigger |
 | :- | :--- | :----- | :-------------- |
-| 29 | Match pairs (graded) | "Pick your Cancel: ABANDON, TRY_CANCEL, WAIT_REQUESTED, WAIT_COMPLETED." | After Slidev 7.1 (cancellation propagation). |
+| 29 | Match pairs (graded) | "Pick your Cancel: match each cancellation type to its scenario." Pairs: ABANDON↔shutting down, don't wait; TRY_CANCEL↔wait until cancel delivered; WAIT_REQUESTED↔wait until handler acknowledges; WAIT_COMPLETED↔wait for handler to exit cleanly. | After Slidev 7.1 (cancellation propagation). |
 | 30 | Pick answer (graded) | "OperationError vs HandlerError: which one triggers automatic retry?" (HandlerError) | After Slidev 7.2 (error types). |
 | 31 | Pick answer (graded) | "You see 'State: Blocked / The circuit breaker is open' in `temporal workflow describe`. What's happening?" | After Slidev 7.3 (circuit breaker). |
 | 32 | Pick answer (graded) | "After how many consecutive errors does the circuit breaker open?" (5) | Same beat. |

@@ -282,12 +282,25 @@ called `terminate()` by the time you see the pause prompt), run:
 temporal workflow describe -w payment-ch07-TXN-FAIL-RETRY-1 -n payments-namespace
 ```
 
-By the pause point the workflow is `Terminated` and Pending Nexus
-Operations is empty. To watch `State: BackingOff` and the climbing
-`Attempt` counter live, run the command in this Inspector tab
-**during** scenario B's 20-second window, before the starter
-terminates the workflow. In other words, peek before the pause, then
-inspect the terminated state during the pause.
+At the pause point the workflow is `Terminated` and Pending Nexus
+Operations is empty. The Event History tells the same story without
+timing pressure. Open it in the Inspector tab:
+
+```bash,run
+temporal workflow show -w payment-ch07-TXN-FAIL-RETRY-1 -n payments-namespace
+```
+
+Look for repeated `NexusOperationStarted` attempts followed by
+`NexusOperationFailed` events with retryable `HandlerError` payloads,
+then a final `WorkflowExecutionTerminated`. The retries-and-backoff
+behavior is recorded in history and can be read at your own pace,
+which is more reliable than catching `State: BackingOff` live during
+the 20-second retry window.
+
+If you would rather watch it live, run `temporal workflow describe`
+in the Inspector tab the moment scenario B starts printing in the
+Lifecycle Starter terminal; the `BackingOff` state and climbing
+`Attempt` counter are visible until `terminate()` fires.
 
 ### Scenario C inspection
 

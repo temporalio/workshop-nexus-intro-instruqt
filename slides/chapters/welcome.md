@@ -76,10 +76,10 @@ layout: default
 
 | Time          | Block                                                                  |
 | :------------ | :--------------------------------------------------------------------- |
-| 9:00 - 9:25   | Welcome and **Ch 1**: Why Nexus, run the monolith                      |
-| 9:25 - 10:40  | **Ch 2 - 4**: Service contract, sync handler, caller workflow          |
-| 10:40 - 11:00 | **Ch 5**: Async Operations                                             |
-| 11:00 - 11:30 | **Snack Break!**                                                       |
+| 9:00 - 9:45   | Welcome, **Ch 1**: Why Nexus, **Ch 2**: Service contract               |
+| 9:45 - 10:00  | **Break**                                                              |
+| 10:00 - 11:15 | **Ch 3 - 5**: Sync handler, caller workflow, async                     |
+| 11:15 - 11:30 | **Halftime + Break**                                                   |
 | 11:30 - 11:55 | **Ch 6**: Updates Through Nexus                                        |
 | 11:55 - 12:15 | **Ch 7**: Cancellation, errors, the circuit breaker                    |
 | 12:15 - 12:30 | Polyglot demo, wrap, and Q&A                                           |
@@ -144,17 +144,21 @@ Brand new to **Nexus**. That's the goal of today.
 </v-click>
 
 <!--
-- You're comfortable with Temporal's core model.
-- **Build 1** **Workflows**, **Activities**, and **Workers**
+- You're comfortable with Temporal's core model and the Python programming language.
+- **Build 1** Workflows, Activities, and Workers.
   - Workflows = durable orchestrators. Activities = work that touches the outside world. Workers = the processes hosting both.
-- **Build 2** **Signals**, **Queries**, and **Updates**
+- **Build 2** Signals, Queries, and Updates.
   - Updates is the load-bearing one for today.
   - Signals are write-only from outside. Queries are read-only. Updates are write-with-return-value.
-- **Build 3** The Temporal Web UI and Event History
+- **Build 3** Temporal timeouts: start_to_close, schedule_to_close, and schedule_to_start.
+  - The room needs to recognize these names; we'll use all three on async Nexus calls.
+- **Build 4** The Temporal Web UI and Event History.
   - We read Event History live more than once today.
-- **Build 4** A bit of Python, enough to follow `async def`
-  - We're not testing Python expertise. We're testing comfort with the words `await` and `async`.
-- **Build 5** Brand new to **Nexus**. That's the goal of today.
+- **Build 5** Brand new to Nexus. That's the goal of today.
+
+## Teaching notes
+
+- Python comfort assumed via the intro line ("the Python programming language"); the bullet for it lived on an earlier draft and has been pulled because the intro covers it. We're not testing Python expertise; we're testing comfort with `await` and `async`.
 -->
 
 ---
@@ -195,7 +199,7 @@ layout: default
 
 <v-clicks>
 
-- **Distinguish** when to use Nexus versus other Temporal integration patterns
+- **Distinguish** when to use Nexus versus Child Workflows, Activities, and bespoke gateways for cross-team integration
 - **Name** the four Nexus building blocks: Service, Operation, Endpoint, and Registry
 - **Define** a typed Nexus Service contract that both teams import
 - **Implement** synchronous and asynchronous Nexus Operation handlers
@@ -207,7 +211,7 @@ layout: default
 </v-clicks>
 
 <!--
-- **Build 1** **Distinguish** when to use Nexus versus other Temporal integration patterns
+- **Build 1** **Distinguish** when to use Nexus versus Child Workflows, Activities, and bespoke gateways for cross-team integration
 - **Build 2** **Name** the four Nexus building blocks: Service, Operation, Endpoint, and Registry
 - **Build 3** **Define** a typed Nexus Service contract that both teams import
 - **Build 4** **Implement** synchronous and asynchronous Nexus Operation handlers

@@ -82,6 +82,7 @@ Treat the assigned ids as load-bearing. `instruqt pull` is the source of truth a
 | `slides/slides.md` | Slidev master deck (imports chapters via `src:`) |
 | `slides/chapters/*.md` | Per-chapter slide content + speaker notes |
 | `slides/theme-temporal/` | Vendored Temporal theme (workshop-customized) |
+| `slides/DEPLOY.md` | VPS hosting guide for live presenter-follow (Caddy + Slidev dev server, PDF at `/export.pdf`) |
 | `docker/Dockerfile` | Sandbox image build |
 | `.github/workflows/build-image.yml` | CI for the sandbox image |
 
@@ -98,9 +99,24 @@ These mirror the patterns in `tmp/Temporal 102 in Python - 20250416me.pptx`. Ver
 - **Workshop-level Outcomes slide.** One slide near the open of the workshop (in `welcome.md`): *"During this workshop, you will…"* with verb-led bullets (Distinguish, Define, Implement, Recognize, etc.). There is no per-chapter Outcomes slide; the 102 source deck only does this at the workshop level.
 - **Per-chapter Review slide.** Used at consequential chapter boundaries (Ch01, Ch04, Ch05, Ch06, Ch07 in this deck). Title is `Review`, body is 4-6 declarative synthesis bullets, built one at a time. Lands after the chapter's last lecture/exercise, before the next chapter's TOC. Skipped for short / non-consequential chapters.
 - **Wrap close.** Final TOC, then `Essential Points (1)` through `Essential Points (N)` numbered slides (this deck has 5), each 3-4 synthesis bullets grouped by theme. The closing slide combines the thank-you line and the feedback URL into one slide: *"Thank you for your time and attention / We welcome your feedback: <URL>"*. There is no separate `Questions?` slide; the thank-you slide stays up during Q&A.
-- **Thesis sentence reassertion.** *"The contract is the integration."* lands three times: Chapter 1 ("What Nexus Is, In One Sentence", as the closing v-click after the credibility bullet), Chapter 2 close ("Why Types Matter Here"), and `Essential Points (5)` at the wrap. Same vocabulary each time; the room remembers a sentence, not a section.
+- **Thesis sentence reassertion.** *"The contract is the integration."* lands three times: Chapter 1 ("From Weld to Contract", as the closing v-click after the credibility bullet), Chapter 2 close ("Why Types Matter Here"), and `Essential Points (5)` at the wrap. Same vocabulary each time; the room remembers a sentence, not a section.
 - **No em-dashes anywhere.** Hyphens, semicolons, commas, or rephrase. Em-dashes read as AI-generated.
 - **No forward references.** Do not write "Chapter N covers", "we'll see", or "AhaSlides slide N tests" in slides or labs. Backward references in speaker notes ("Recall the contract from earlier") are fine.
 - **Slidev imports.** When adding a new chapter, add the chapter file under `slides/chapters/` and import it from `slides/slides.md` via a frontmatter-only slide with `src: ./chapters/<file>.md`.
-- **Slide font sizes.** The vendored theme has been tuned for content density (base 1.15rem, h1 2.4rem, code 0.95rem, tightened margins). If you reduce further, re-audit overflow with `slides/dist/export/` after a build.
+- **Slide font sizes match PowerPoint defaults from the canonical Temporal 102 deck.** Base 1.375rem (22pt body), h1 3rem (48pt title), h2 2.2rem, h3 1.7rem, code 1.375rem (22pt), inline code 1.2rem. Conversion rule: Slidev's default canvas is 980 CSS px wide and PPT 16:9 is 960pt wide, so 1pt ≈ 1px and rem = pt ÷ 16. Footer sits 18px from canvas bottom via `margin-bottom: -1.875rem` on `.temporal-footer` (the layout's `padding-bottom: 3rem` reserves a content-protection zone; the negative margin lets the footer extend past it without changing where content can sit). If you change font sizes, re-audit overflow with `slides/dist/export/` after a build.
+- **Per-slide style overrides use `<style>` blocks.** Each Slidev slide compiles as its own Vue component, so a plain `<style>` block in the slide markdown is auto-scoped to that slide. Frontmatter `class: text-sm` does not reliably override the theme's explicit font sizes (specificity loses); use `<style>` blocks instead. Examples in the deck: the Agenda table's tighter cell padding, the Patterns slide's centered mint-green punchline.
+- **Chapters open with the TOC slide only.** Each chapter file starts with `layout: toc` (which highlights the current chapter) and jumps directly into content. There is no separate `# 01 / Why Nexus` section-divider title slide between the TOC and the first content slide; the TOC already signals the chapter transition. Do not re-add section dividers.
 - **Ch 1 pacing is intentional and asymmetric to other chapters.** Ch 1 is the only chapter where the Instruqt lab runs *before* the chapter's main solution lecture: frame the problem → AhaSlides warmup poll → Instruqt lab ("Run the Monolith") → Slidev Nexus intro → AhaSlides graded quiz → Slidev review. The room feels the architecture before being told what's wrong with it. Every other chapter follows the standard lecture → exercise → quiz pattern. `course-plan.md`, `aha.md`, and `slides/chapters/ch01-why-nexus.md` all agree on this ordering.
+
+## Vocabulary convention: handler vs implementer
+
+The Temporal docs use "handler" for three different referents: a **side** (a team or namespace), a **piece of code** (a function or class with `@sync_operation` or `@workflow_run_operation`), and a **Worker** process. The metaphor is internally consistent but the referent shifts sentence to sentence, which is the single biggest pedagogical friction in introducing Nexus. This workshop disambiguates:
+
+- **handler** = the code only (a function or class with `@sync_operation` or `@workflow_run_operation`).
+- **implementer** = the side, the team, the role.
+- **Worker** stays "Worker." Already its own well-known concept.
+- **caller** stays "caller." The docs only use that word one way.
+
+Ch 1 has a dedicated **"Same Word, Three Different Things"** slide that explicitly explains this convention to the room before any other chapter uses the terminology. Subsequent chapters use **"implementer-side"** instead of "handler-side" wherever the role/side is meant. Code-level references (sync handler, async handler, handler Worker, handler Workflow, decorator names) are kept because they match SDK and doc canon. Do not sweep these back to "handler" for the role.
+
+When editing slides or speaker notes, watch for the role-level usage specifically: phrases like "the handler picks", "the handler decides", "handler-side team", "handler side", or "the handler can choose" all belong to the role and should use "implementer." Phrases like "@sync_operation handler", "OperationHandler.sync", or "the handler Workflow" are code-level and stay.

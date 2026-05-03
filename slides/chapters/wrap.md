@@ -9,14 +9,17 @@ layout: section
 
 # Final Standings
 
-ahaslides.com/O8RSE
+ahaslides.com/NEXUSWS
 
 <!--
 - "Alright, final standings. The whole morning's points are on this board. Let's see who's taking it home."
-- AhaSlides leaderboard: Final standings.
-  - "First place, name. Second, name. Third, name. Big round of applause."
-  - "If you missed the podium by one or two questions, that one was on slide [X]. Catch me at the booth if you want to argue."
+- "First place, name. Second, name. Third, name. Big round of applause."
+- "If you missed the podium by one or two questions, catch me at the booth if you want to argue."
 - "Congratulations to the top three. Before you go, let's recap what you actually did this morning, then I want one specific commitment from each of you."
+
+## Teaching notes
+
+- AhaSlides leaderboard: Final standings.
 -->
 
 ---
@@ -144,6 +147,11 @@ One contract, every SDK:
   - The wire-level discipline that earns the "no Python change" claim.
 - **Build 3** Multi-language teams can each pick the SDK that fits their domain and still cooperate through Nexus.
 - **Build 4** The contract is the integration.
+
+## Teaching notes
+
+- Thesis-sentence reassertion. Per CLAUDE.md, "The contract is the integration." lands three times across the deck: Ch 1 ("From Weld to Contract"), Ch 2 ("Why Types Matter Here"), and here. Same vocabulary each time; the room remembers a sentence, not a section. Land it slowly.
+- **Anecdotal close (verbal-only, optional).** If the room is engaged and pacing allows, anchor the thesis in production language without naming a customer: "Real Temporal teams are deleting their bespoke gateways and replacing them with this." Concrete pre-Nexus pain (anonymized): a multi-team org maintaining a custom gRPC reverse-proxy gateway just to glue workflows together; with Nexus, that gateway is decommissioned and every team's workflows talk over the same managed contract. Don't put company names on the slide. The contract-is-the-integration thesis is the takeaway; the production-pain framing is optional color.
 -->
 
 ---
@@ -157,6 +165,7 @@ layout: default
 - **In-workflow cancellation with `asyncio.create_task`**: cancel a long-running Nexus Operation from inside a workflow without cancelling the whole workflow.
 - **Handler cleanup with `asyncio.shield`**: cleanup runs even when the caller cancels.
 - **Multi-handler endpoints**: one Endpoint serving multiple Service handlers.
+- **Standalone activities for unreliable external HTTP**: GA-imminent on Temporal Cloud. The right tool for wrapping flaky third-party APIs that would trip the Nexus circuit breaker.
 - **Cross-region and cross-account on Temporal Cloud**: Nexus crosses namespaces. Crossing regions and accounts has more considerations.
 
 </v-clicks>
@@ -165,7 +174,7 @@ layout: default
 
 <v-click>
 
-All three patterns are in the SDK samples repos.
+The SDK samples repos cover the in-workflow patterns. **Standalone activities** ship alongside the Nexus features it pairs with.
 
 </v-click>
 
@@ -178,10 +187,54 @@ All three patterns are in the SDK samples repos.
   - See samples-python.
 - **Build 3** Multi-handler endpoints.
   - One Endpoint serving multiple Service handlers, registry-style routing.
-- **Build 4** Cross-region and cross-account on Temporal Cloud.
+- **Build 4** Standalone activities for unreliable external HTTP. GA-imminent on Temporal Cloud.
+  - For wrapping flaky third-party APIs that would otherwise trip the Nexus circuit breaker if called directly from a sync handler.
+  - Per Phil Prasek (lead PM, Nexus): "the only way to wrap arbitrary external HTTP calls that are not super rock solid in reliability is going to be using the standalone activities." Coinbase co-launch Wed 2026-05-06.
+  - **Live-workshop hook (verbal-only):** "This becomes GA the day after this workshop, on Wednesday 2026-05-06." Memorable date the room can carry away. Co-launch with **Coinbase** (do not name them on the slide; the customer name lives in this note for delivery context only).
+- **Build 5** Cross-region and cross-account on Temporal Cloud.
   - Nexus crosses namespaces. Cross-region and cross-account each have additional considerations.
   - docs.temporal.io/cloud/nexus is the entry point.
-- **Build 5** All three patterns are in the SDK samples repos.
+- **Build 6** The SDK samples repos cover the in-workflow patterns. Standalone activities ship alongside the Nexus features it pairs with.
+  - In-workflow patterns are documented in samples-python and equivalent SDK repos. Standalone activities will follow the same publication path.
+-->
+
+---
+layout: default
+---
+
+# What's Different on Temporal Cloud
+
+The Service contract you wrote today works on both self-hosted and Cloud. The operator-side surface is where Cloud differs.
+
+<v-clicks>
+
+- **Per-Endpoint allowlist**: default-deny security on every Endpoint. Self-hosted relies on Namespace-level controls only.
+- **mTLS Envoy mesh + audit logs**: Cloud-managed wire-level security and observability on every Nexus call.
+- **Account-scoped Endpoints**: one Endpoint reachable from every Namespace in your Cloud account, governed by the allowlist. Self-hosted Endpoints are cluster-scoped.
+- **HA Namespaces and cross-region routing**: cross-region and cross-account Nexus is a Cloud feature; self-hosted gets Nexus per cluster.
+- **Production limits and Worker tuning**: the 60-day async ceiling and the 30 in-flight Operations per caller workflow are Cloud caps; self-hosted operators tune the same dials via dynamic config.
+
+</v-clicks>
+
+<!--
+- The contract is portable. The Cloud differentiators sit on the operator surface (security, routing, ceilings), not the developer surface.
+- **Build 1** Per-Endpoint allowlist.
+  - Already covered as a Ch3 punchline. Reiterate here in the wrap context: this is the single biggest enterprise-security selling point of Cloud Nexus.
+- **Build 2** mTLS Envoy mesh + audit logs.
+  - Cloud manages the wire-level transport and gives you audit/metrics for free. Self-hosted teams build (or skip) this themselves.
+- **Build 3** Account-scoped Endpoints.
+  - Endpoint is global within an account. Self-hosted is global per cluster, which is different topology.
+- **Build 4** HA Namespaces and cross-region routing.
+  - Federated control plane is Cloud-only. Self-hosted clusters can do Nexus inside a cluster, but cross-cluster federation is not a feature.
+- **Build 5** Production limits and Worker tuning.
+  - Same dials, different defaults. Cloud locks the 60-day async ceiling; self-hosted can raise it via `component.nexusoperations.limit.scheduleToCloseTimeout`. Cloud caps in-flight Operations per caller workflow at 30 today.
+
+## Teaching notes
+
+- This slide exists per Phil Prasek's 2026-05-01 PM call: a wrap-side recap of the Cloud-specific Nexus differentiators that the workshop bumps into chapter by chapter (allowlist in Ch3, 60-day ceiling in Ch1/Ch5, the 30 cap in Ch5 Teaching notes).
+- **Self-Service Portal pattern (verbal-only, optional).** The combination of account-scoped Endpoints + per-Endpoint allowlist is what makes the cross-namespace self-service portal pattern practical on Cloud. On self-hosted you can build the same shape but you'd assemble the security yourself. Mention if the room asks "is this a Cloud feature or a pattern?"
+- **Project-scoped security (verbal-only, forward-looking).** Tighter project-level governance on top of the allowlist is on the roadmap. Mention only if asked; the exact shape is not yet documented.
+- Cross-region/cross-account stays as a bullet in `Patterns We Didn't Cover Today` because it deserves its own pointer; the bullet here is the "what's the Cloud surface story" framing.
 -->
 
 ---
@@ -192,8 +245,9 @@ layout: default
 
 <v-clicks>
 
-- **Non-Workflow callers**: invoke Nexus Operations from bash, services, or any app. Today the caller must be a Workflow. That constraint is going away.
-- **Contract-first development**: IDL definitions and code generation via [`nexus-rpc-gen`](https://github.com/nexus-rpc/nexus-rpc-gen). Define the Service once, generate handlers and stubs for every SDK.
+- **Connectors**: inbound gateways and outbound connectors for HTTP, Kafka, MCP, and more. Lets non-Workflow callers join the durable-RPC story.
+- **Agentic AI workflows over Nexus**: AI agents reach Nexus through the same durable-RPC contract. The MCP gateway is the entry point.
+- **Contract-first development**: future IDL and CodeGen. Define the Service once, generate handlers and stubs for every SDK.
 - **Per-caller rate limiting and fine-grained authorization** on Nexus Endpoints. Matters when one Endpoint is shared by many internal teams.
 - **Enhanced routing rules**: today one Endpoint targets one Namespace and one Task Queue. Richer routing is on the way.
 
@@ -208,19 +262,60 @@ Today's Workflow-to-Workflow case is one application of a broader durable-RPC st
 </v-click>
 
 <!--
-- Source: Temporal's "The road ahead" section in the Nexus GA announcement (temporal.io/blog/temporal-nexus-now-available) and the Public Preview blog's "What's next" (temporal.io/blog/announcing-nexus-connect-temporal-applications-across-isolated-namespaces).
-- **Build 1** **Non-Workflow callers**: invoke Nexus Operations from bash, services, or any app.
-  - This is the biggest one for the room. "I have a non-Temporal service that wants to invoke a Workflow durably" is real and common. Today not supported. Roadmap, actively being built per Slack threads as of late 2025.
-  - This is what makes today's "Workflow caller" requirement temporary. The Ch 1 slide already says "a way of invoking" rather than "a Workflow invoking" so it stays accurate when this lands.
-- **Build 2** **Contract-first development** via nexus-rpc-gen.
+- **Build 1** Connectors: invoke Nexus Operations from any protocol via inbound gateways and outbound connectors. HTTP, Kafka, MCP, and more.
+  - Mental model: an inbound gateway converts an HTTP / Kafka / MCP request into a Nexus Operation call. An outbound connector goes the other direction.
+  - "I have a non-Temporal service that wants to invoke a Workflow durably" is real and common. The connector layer is how that lands. Roadmap, actively being built.
+- **Build 2** Agentic AI workflows over Nexus.
+  - The MCP gateway in the connector model is the entry point for agentic callers. An AI agent that needs to invoke a workflow durably reaches the same Nexus Service contract every team-to-team caller already uses.
+  - Same observability story for agentic and traditional workflows; the polyglot chapter already touched this.
+- **Build 3** Contract-first development: future IDL and CodeGen.
   - For teams that prefer declarative IDL service definitions over decorator-on-class.
   - Define once, generate handlers and stubs across every SDK.
-- **Build 3** **Per-caller rate limiting and fine-grained authorization.**
-  - Operate-side. Matters when a Nexus Endpoint is shared by many internal teams.
-- **Build 4** **Enhanced routing rules.**
+- **Build 4** Per-caller rate limiting and fine-grained authorization.
+  - Operator-side. Matters when a Nexus Endpoint is shared by many internal teams.
+- **Build 5** Enhanced routing rules.
   - Today: one Endpoint maps to one (Namespace, Task Queue). Future: more flexible routing.
-- **Build 5** Today's Workflow-to-Workflow case is one application of a broader durable-RPC story. The platform is leaning in.
-  - The "durable RPC" framing from Ch 1 generalizes here. Non-Workflow callers eliminate the last asterisk.
+- **Build 6** Today's Workflow-to-Workflow case is one application of a broader durable-RPC story. The platform is leaning in.
+  - The "durable RPC" framing from Ch 1 generalizes here. The connector layer eliminates the Workflow-only-caller asterisk.
+
+## Teaching notes
+
+- The connectors framing comes from Phil Prasek's 2026-05-01 PM call: "Think of it as an inbound gateway and an outbound connector, for HTTP, for Kafka, for MCP, etc, right? And then those basically make it easy to use Nexus services from other protocols."
+- The Ch 1 slide already says "a way of invoking" rather than "a Workflow invoking" so it stays accurate when the connector layer ships.
+- Standalone activities are a separate-but-related work stream (GA-imminent on Temporal Cloud, Coinbase co-launch). They are the canonical answer for unreliable external HTTP today; mention only if asked.
+- **Standalone Activities vs Standalone Nexus Operations (verbal-only, easy to confuse).** These are different products.
+  - **Standalone Activities** runs an Activity without a workflow (1 Cloud Action vs 2; the building block for outbound connectors that wrap unreliable external HTTP).
+  - **Standalone Nexus Operations** invokes a Nexus Endpoint without a caller workflow (durably executed by Nexus Machinery; the building block for inbound connectors).
+  - Standalone Activities lands first. Documented internal confusion point at Temporal; expect to clarify if attendees ask.
+-->
+
+---
+layout: default
+---
+
+# See It in Production
+
+The cross-namespace self-service pattern this workshop teaches, at production scale.
+
+<v-clicks>
+
+- **Replay 2026 talk** (Thursday 10:30 - 11:15 AM): [`replay.temporal.io/schedule/bottlenecks-self-service-duolingo-workflow-as-a-service-temporal-nexus`](https://replay.temporal.io/schedule/bottlenecks-self-service-duolingo-workflow-as-a-service-temporal-nexus)
+- **Case study**: [`temporal.io/resources/case-studies/duolingo-temporal-nexus`](https://temporal.io/resources/case-studies/duolingo-temporal-nexus)
+
+</v-clicks>
+
+<!--
+- This slide isolates the two production-grounded pointers so they get their own beat before the general resources list. Mason: "add it prominently."
+- **Build 1** Replay 2026 talk: Workflow-as-a-Service in production.
+  - Live, this week. "From Bottlenecks to Self-Service: How Duolingo Built Workflow-as-a-Service with Temporal Nexus" by Zhihao Wang (Staff Software Engineer, Duolingo). The conference talk version of the published case study; same shape, deeper detail. If the room is still on-site, point them at this talk explicitly.
+- **Build 2** Case study.
+  - The published Duolingo case study. Concrete numbers (30+ workflows shared across teams, hundreds of engineering hours saved), production architecture, the same Workflow-as-a-Service pattern this workshop teaches at smaller scale.
+
+## Teaching notes
+
+- Replay talk speaker is **Zhihao Wang**, Staff Software Engineer at **Duolingo**. Title: "From Bottlenecks to Self-Service: How Duolingo Built Workflow-as-a-Service with Temporal Nexus." Customer name lives in the URL slug and the speaker bio; the on-slide bullet text is topic-led.
+- Case study reports 30+ workflows shared across teams, hundreds of engineering hours saved.
+- This slide was split off from "Where to Go Next" because the two long URL slugs caused that slide's closing v-click to overflow. Splitting also gives the talk + case study the prominence Mason asked for.
 -->
 
 ---
@@ -249,18 +344,22 @@ Bring the contract you wrote today back to your team. Pick one cross-team call. 
 </v-click>
 
 <!--
-- **Build 1** **Docs**: `docs.temporal.io/nexus`
+- **Build 1** Docs: `docs.temporal.io/nexus`
   - The reference. Conceptual overview, API specs per SDK, FAQs.
-- **Build 2** **Tutorial**: Java sync Nexus tutorial on learn.temporal.io
+- **Build 2** Temporal Cloud-specific Nexus: `docs.temporal.io/cloud/nexus`
+  - Cross-account and cross-region considerations live here, not in the main Nexus docs.
+- **Build 3** Versioning: Service contract changes are an additive-and-rollout problem.
+  - `docs.temporal.io/worker-versioning` covers the workflow-code side. The Service-contract side follows the same playbook as gRPC or OpenAPI.
+- **Build 4** Tutorial: Java sync Nexus tutorial on learn.temporal.io
   - The published tutorial this workshop is built on top of.
   - Worth pointing at attendees who want to do the same thing in Java.
-- **Build 3** **Samples**: `samples-python/nexus` and the equivalent in your SDK
+- **Build 5** Samples: `samples-python/nexus` and the equivalent in your SDK
   - Working code in every SDK. The fastest way to bootstrap a new project.
   - The samples-python repo has the cleanest Python examples.
-- **Build 4** **Community**: `#nexus` channel in the Temporal Community Slack
+- **Build 6** Community: `#nexus` channel in the Temporal Community Slack
   - SDK maintainers hang out there. So do early Nexus adopters.
   - Get an invite from temporal.io/slack if they don't already have one.
-- **Build 5** Bring the contract you wrote today back to your team. Pick one cross-team call. Ship it through Nexus.
+- **Build 7** Bring the contract you wrote today back to your team. Pick one cross-team call. Ship it through Nexus.
   - "Pick one call" is the right scope: not "rewrite your platform," just one call.
 -->
 
@@ -270,17 +369,20 @@ layout: section
 
 # Reflection
 
-ahaslides.com/O8RSE
+ahaslides.com/NEXUSWS
 
 <!--
 - "Three last questions on AhaSlides. The first one is the only one that matters for you, pick something specific to try when you get back to your team."
-- AhaSlides brainstorm: "What will you try first when you get back to your team?"
-  - "Even one word. 'Refunds.' 'KYC.' 'The Go service.' Pick one."
-- AhaSlides scale 0-10: "Likelihood to recommend Nexus to a colleague."
-- AhaSlides open-ended: "What still feels fuzzy?"
-  - "Updates feels fuzzy? Let me give you the one-sentence summary right now."
-  - "I'll address these in a follow-up post in the #nexus channel."
+- "Even one word. 'Refunds.' 'KYC.' 'The Go service.' Pick one."
+- "Updates feels fuzzy? Let me give you the one-sentence summary right now."
+- "I'll address these in a follow-up post in the #nexus channel."
 - "Thank you. Final slide, Q&A is open. I'm staying right here, and I'm at the booth all afternoon."
+
+## Teaching notes
+
+- AhaSlides brainstorm trigger: "What will you try first when you get back to your team?"
+- AhaSlides scale 0-10 trigger: "Likelihood to recommend Nexus to a colleague."
+- AhaSlides open-ended trigger: "What still feels fuzzy?"
 -->
 
 ---
@@ -289,17 +391,30 @@ layout: end
 
 # Thank you for your time and attention
 
-We welcome your feedback: **ahaslides.com/O8RSE**
+**Please take 30 seconds to share your feedback.** Scan the QR or open the link. It shapes the next workshop.
+
+[**t.mp/replay26-ws-feedback**](https://t.mp/replay26-ws-feedback)
 
 <br>
 
-**Mason Egger** | mason.egger@temporal.io
+**Mason Egger** | mason@temporal.io
 
-Questions, horror stories, or follow-ups: find me at the booth or in `#nexus` on Temporal Slack.
+<img src="/exit-survey-feedack.png" alt="Workshop feedback QR code" class="feedback-qr" />
+
+<style>
+.feedback-qr {
+  position: absolute;
+  right: 3.5rem;
+  bottom: 3.5rem;
+  width: 14rem;
+  height: 14rem;
+  border-radius: 0.5rem;
+}
+</style>
 
 <!--
 - "Thank you for your time and attention."
-- "We welcome your feedback."
-- "If your question takes more than two minutes, find me at the booth. I'm there all afternoon."
+- "Before you go, please take 30 seconds and fill out the feedback survey. Scan the QR or hit the URL. It genuinely shapes how I run this next time."
+- "If your question takes more than two minutes, find me throughout the conference."
 - "What's the first cross-team call you're going to put through Nexus when you get back?"
 -->
