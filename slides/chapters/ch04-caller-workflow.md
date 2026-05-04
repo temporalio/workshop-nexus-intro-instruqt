@@ -26,14 +26,14 @@ The Payments engineer six months from now reads this line and the only thing the
 </v-click>
 
 <!--
-- **Build 1** Before: await workflow.execute_activity(check_compliance, ...) calls a function the Payments Worker imports and runs.
+- **Build 1 -** Before: await workflow.execute_activity(check_compliance, ...) calls a function the Payments Worker imports and runs.
   - The "before" picture. Activity is a function the local Worker has imported.
-- **Build 2** After: await nexus_client.execute_operation(...) calls a function the Compliance Worker runs in another namespace.
+- **Build 2 -** After: await nexus_client.execute_operation(...) calls a function the Compliance Worker runs in another namespace.
   - The "after" picture. The function lives somewhere else. The caller doesn't import it.
-- **Build 3** Same await. Same return value. Different ownership.
+- **Build 3 -** Same await. Same return value. Different ownership.
   - The shape of the call site is identical. Workflows that already use Activities can swap to Nexus with minimal code change.
   - What changes is who owns the implementation. That's the architectural shift.
-- **Build 4** The Payments engineer six months from now reads this line and the only thing they need to know is that compliance-endpoint exists.
+- **Build 4 -** The Payments engineer six months from now reads this line and the only thing they need to know is that compliance-endpoint exists.
   - Future-Mason, future-anybody, never has to read Compliance code.
   - The Endpoint name is the public surface. Everything else is implementation.
 
@@ -68,15 +68,15 @@ compliance: ComplianceResult = await nexus_client.execute_operation(
 
 <!--
 - This is the entire caller side. Two calls. It's small.
-- **Build 1 (whole code)** The full caller block.
-- **Build 2 (lines 1-4, create_nexus_client)** `workflow.create_nexus_client(service=..., endpoint=...)`
+- **Build 1 (whole code) -** The full caller block.
+- **Build 2 (lines 1-4, create_nexus_client) -** `workflow.create_nexus_client(service=..., endpoint=...)`
   - The caller-side stub. Two arguments: the Service contract class and the Endpoint name.
   - That's it. No namespace, no task queue, no handler import.
-- **Build 3 (lines 6-10, execute_operation)** `await nexus_client.execute_operation(...)`
+- **Build 3 (lines 6-10, execute_operation) -** `await nexus_client.execute_operation(...)`
   - Looks like an Activity call. Same `await`, same return value, same retry/timeout story.
   - First positional arg is the Operation reference (not a string). Type-checked.
   - Second positional arg is the input dataclass.
-- **Build 4 (whole code)**
+- **Build 4 (whole code) -**
 - The Caller-Side Explained slide carries the synthesis bullets.
 -->
 
@@ -110,14 +110,14 @@ The caller knows the **contract** and the **Endpoint name**. That's the property
 </v-click>
 
 <!--
-- **Build 1** `create_nexus_client` is the caller-side stub. Service contract plus endpoint name.
+- **Build 1 -** `create_nexus_client` is the caller-side stub. Service contract plus endpoint name.
   - The caller's view of the integration: contract + name. Nothing else.
-- **Build 2** `execute_operation` looks like an Activity call. Same `await`, same return value.
+- **Build 2 -** `execute_operation` looks like an Activity call. Same `await`, same return value.
   - If you can call an Activity, you can call a Nexus Operation. The mental model is the same.
-- **Build 3** Notice what the caller does NOT have.
+- **Build 3 -** Notice what the caller does NOT have.
   - The caller only knows the contract and the Endpoint name.
   - This is the property that makes a same-contract Java handler invisible to a Python caller.
-- **Build 4** The contract + Endpoint name pair is the caller's whole world.
+- **Build 4 -** The contract + Endpoint name pair is the caller's whole world.
   - The Polyglot demo at the end of the workshop pays this off: a Java handler hits the same contract; the Python caller doesn't change.
 -->
 
@@ -159,21 +159,21 @@ The Payments Worker no longer **knows about** compliance. The dependency flips f
 </style>
 
 <!--
-- **Build 1 (Before block, whole)** The original Worker registration.
-- **Build 2 (Before, line 4 highlight)** `activities=[validate_payment, execute_payment, check_compliance]`
+- **Build 1 (Before block, whole) -** The original Worker registration.
+- **Build 2 (Before, line 4 highlight) -** `activities=[validate_payment, execute_payment, check_compliance]`
   - Three activities. `check_compliance` is the cross-team one.
   - This Worker can run all three because all three live in this codebase.
-- **Build 3 (Before block, whole)**
-- **Build 4 (After block, whole)** The new Worker registration.
-- **Build 5 (After, line 4 highlight)** `activities=[validate_payment, execute_payment]`
+- **Build 3 (Before block, whole) -**
+- **Build 4 (After block, whole) -** The new Worker registration.
+- **Build 5 (After, line 4 highlight) -** `activities=[validate_payment, execute_payment]`
   - One activity removed. The diff is one word.
   - `check_compliance` is no longer importable from this Worker. The import is gone too (do this in the exercise).
-- **Build 6 (After block, whole)**
-- **Build 7** The Payments Worker no longer **knows about** compliance. That's the win.
+- **Build 6 (After block, whole) -**
+- **Build 7 -** The Payments Worker no longer **knows about** compliance. That's the win.
   - The Worker can't run a compliance check even if it wanted to.
   - The only path is through Nexus, which means the only path is through the Compliance team's Worker.
   - Cross-team blast radius dropped to zero on this one call.
-- **Build 8** The dependency graph between teams flips, from "Payments imports Compliance" to "Payments depends on a Service contract; Compliance happens to implement it."
+- **Build 8 -** The dependency graph between teams flips, from "Payments imports Compliance" to "Payments depends on a Service contract; Compliance happens to implement it."
   - The diff is one word, but the architectural shift is enormous.
   - You can change Compliance's implementation, scale it, deploy it, monitor it independently. The Payments team will never know.
 -->
@@ -210,17 +210,17 @@ Two events. Same shape as a single Activity call. No Workflow in `compliance-nam
 <!--
 - After the exercise they'll do this for real in the Web UI.
 - In the caller's Event History, a sync Nexus Operation produces two events.
-- **Build 1** `NexusOperationScheduled`: the Nexus call was started
+- **Build 1 -** `NexusOperationScheduled`: the Nexus call was started
   - This is the analogue of `ActivityTaskScheduled`. The caller workflow has emitted "I want this Operation to run."
-- **Build 2** `NexusOperationCompleted`: the handler returned
+- **Build 2 -** `NexusOperationCompleted`: the handler returned
   - The handler ran, returned a result, and the caller's Event History records the completion.
   - The result payload is on this event. You can inspect it in the Web UI.
-- **Build 3** That's it. Two events. Same shape as a single Activity call.
+- **Build 3 -** That's it. Two events. Same shape as a single Activity call.
   - Activity: Scheduled + Completed. Sync Nexus: Scheduled + Completed. Symmetric.
-- **Build 4** You will **not** see a Workflow in `compliance-namespace` for a sync Operation.
+- **Build 4 -** You will **not** see a Workflow in `compliance-namespace` for a sync Operation.
   - A sync handler is a function call, not a workflow.
   - There's no compliance-side workflow to look at. Yet.
-- **Build 5** This is your first Nexus diagnostic surface.
+- **Build 5 -** This is your first Nexus diagnostic surface.
   - No Scheduled, the call never registered. The Nexus call never made it off the caller side.
   - Scheduled but no Completed, the handler is stuck. Worker not running, deadline blown, exception on the way back.
   - Both, the round trip worked. The rest of debugging layers on top of these two events.
@@ -307,12 +307,12 @@ layout: default
 </v-clicks>
 
 <!--
-- **Build 1** A Nexus Service contract is a typed Python class that both teams import
-- **Build 2** A synchronous Nexus handler runs inline on the handler Worker. No handler workflow exists.
-- **Build 3** A Nexus Endpoint is a routing entry created with the Temporal CLI. The caller names the Endpoint, never the Namespace.
-- **Build 4** A caller Workflow uses `workflow.create_nexus_client` and `execute_operation` in place of an Activity call
-- **Build 5** A successful synchronous Nexus call produces two events on the caller's Event History: `NexusOperationScheduled` and `NexusOperationCompleted`
-- **Build 6** The Compliance team's Worker now owns its task queue, and the Payments Worker no longer imports Compliance code
+- **Build 1 -** A Nexus Service contract is a typed Python class that both teams import
+- **Build 2 -** A synchronous Nexus handler runs inline on the handler Worker. No handler workflow exists.
+- **Build 3 -** A Nexus Endpoint is a routing entry created with the Temporal CLI. The caller names the Endpoint, never the Namespace.
+- **Build 4 -** A caller Workflow uses `workflow.create_nexus_client` and `execute_operation` in place of an Activity call
+- **Build 5 -** A successful synchronous Nexus call produces two events on the caller's Event History: `NexusOperationScheduled` and `NexusOperationCompleted`
+- **Build 6 -** The Compliance team's Worker now owns its task queue, and the Payments Worker no longer imports Compliance code
 -->
 
 <!--

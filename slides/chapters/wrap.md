@@ -40,13 +40,13 @@ The shape of the integration:
 </v-clicks>
 
 <!--
-- **Build 1** Cross-team Temporal integration needs cross-team Nexus Endpoints. Namespaces become tenancy boundaries with real teeth.
+- **Build 1 -** Cross-team Temporal integration needs cross-team Nexus Endpoints. Namespaces become tenancy boundaries with real teeth.
   - Namespaces are not "groupings" anymore; they are tenancy units.
-- **Build 2** A Nexus Service is a typed Python class both teams import. Operations are the typed methods on it.
+- **Build 2 -** A Nexus Service is a typed Python class both teams import. Operations are the typed methods on it.
   - The contract is the integration.
-- **Build 3** An Endpoint is a reverse proxy with a routing entry the operator creates with the Temporal CLI. Caller code names only the Endpoint.
+- **Build 3 -** An Endpoint is a reverse proxy with a routing entry the operator creates with the Temporal CLI. Caller code names only the Endpoint.
   - DNS-entry mental model. The operator-side artifact.
-- **Build 4** Service and Operation are code-level. Endpoint and Registry are operator-level.
+- **Build 4 -** Service and Operation are code-level. Endpoint and Registry are operator-level.
   - Two halves of the responsibility.
 -->
 
@@ -68,11 +68,11 @@ The two handler shapes:
 </v-clicks>
 
 <!--
-- **Build 1** Synchronous handlers run inline on the handler Worker, return a result directly, and must respond within a 10-second per-request deadline.
-- **Build 2** Asynchronous handlers return a handle to obtain the result, cancel, and otherwise manage the async Operation. Up to 60 days on Temporal Cloud.
+- **Build 1 -** Synchronous handlers run inline on the handler Worker, return a result directly, and must respond within a 10-second per-request deadline.
+- **Build 2 -** Asynchronous handlers return a handle to obtain the result, cancel, and otherwise manage the async Operation. Up to 60 days on Temporal Cloud.
   - Today the handle is a `WorkflowHandle`. Code-level details live on the ch04 / ch05 slides; the wrap stays generic.
-- **Build 3** Choose sync when the work fits comfortably under five seconds. Choose async for everything else, especially anything that needs cancellation.
-- **Build 4** Set `schedule_to_close_timeout` on every async caller. `schedule_to_start` and `start_to_close` are situational. Use `WorkflowIDConflictPolicy.USE_EXISTING` for idempotent retries.
+- **Build 3 -** Choose sync when the work fits comfortably under five seconds. Choose async for everything else, especially anything that needs cancellation.
+- **Build 4 -** Set `schedule_to_close_timeout` on every async caller. `schedule_to_start` and `start_to_close` are situational. Use `WorkflowIDConflictPolicy.USE_EXISTING` for idempotent retries.
   - `schedule_to_close` bounds total time end-to-end. That is the one Temporal guidance recommends in nearly all cases.
   - `schedule_to_start` and `start_to_close` are situational: add them when you have a specific reason — a known queue-pickup ceiling, or a per-attempt cap distinct from total time. Don't default to setting them.
   - The two production gotchas of async.
@@ -100,10 +100,10 @@ The Update path:
 </v-clicks>
 
 <!--
-- **Build 1** A Workflow Update has two stages: a validator that reads state and raises, then a handler that writes state and returns.
-- **Build 2** A sync Nexus handler that resolves a running workflow and forwards an Update is the canonical cross-team "tell-a-running-workflow-X" pattern.
-- **Build 3** A short-lived caller workflow lets reviewers route human input through the same Service contract every other caller uses.
-- **Build 4** The handler workflow's Event History records `WorkflowExecutionUpdateAccepted` and `WorkflowExecutionUpdateCompleted` for a successful Update.
+- **Build 1 -** A Workflow Update has two stages: a validator that reads state and raises, then a handler that writes state and returns.
+- **Build 2 -** A sync Nexus handler that resolves a running workflow and forwards an Update is the canonical cross-team "tell-a-running-workflow-X" pattern.
+- **Build 3 -** A short-lived caller workflow lets reviewers route human input through the same Service contract every other caller uses.
+- **Build 4 -** The handler workflow's Event History records `WorkflowExecutionUpdateAccepted` and `WorkflowExecutionUpdateCompleted` for a successful Update.
 -->
 
 ---
@@ -124,10 +124,10 @@ Production reflexes:
 </v-clicks>
 
 <!--
-- **Build 1** Sync events on the caller: Scheduled, Completed. Async events: Scheduled, Started, Completed.
-- **Build 2** Cancellation crosses the boundary automatically. Pick the cancel type based on what you need to wait for.
-- **Build 3** OperationError is permanent. HandlerError is transient and retries with backoff.
-- **Build 4** 5 consecutive retryable errors on the same caller-Namespace and Endpoint pair open the circuit breaker for 60 seconds.
+- **Build 1 -** Sync events on the caller: Scheduled, Completed. Async events: Scheduled, Started, Completed.
+- **Build 2 -** Cancellation crosses the boundary automatically. Pick the cancel type based on what you need to wait for.
+- **Build 3 -** OperationError is permanent. HandlerError is transient and retries with backoff.
+- **Build 4 -** 5 consecutive retryable errors on the same caller-Namespace and Endpoint pair open the circuit breaker for 60 seconds.
   - "Most circuit breaker trips in the wild are handler workers not running."
 -->
 
@@ -149,11 +149,11 @@ One contract, every SDK:
 </v-clicks>
 
 <!--
-- **Build 1** The same Nexus Service contract serves a Python handler today and a Java handler tomorrow without a Python change.
-- **Build 2** The wire format is HTTP-based and language-agnostic, anchored by snake_case field names on both sides.
+- **Build 1 -** The same Nexus Service contract serves a Python handler today and a Java handler tomorrow without a Python change.
+- **Build 2 -** The wire format is HTTP-based and language-agnostic, anchored by snake_case field names on both sides.
   - The wire-level discipline that earns the "no Python change" claim.
-- **Build 3** Multi-language teams can each pick the SDK that fits their domain and still cooperate through Nexus.
-- **Build 4** The contract is the integration.
+- **Build 3 -** Multi-language teams can each pick the SDK that fits their domain and still cooperate through Nexus.
+- **Build 4 -** The contract is the integration.
 
 ## Teaching notes
 
@@ -186,22 +186,22 @@ The SDK samples repos cover the in-workflow patterns. **Standalone activities** 
 </v-click>
 
 <!--
-- **Build 1** In-workflow cancellation with asyncio.create_task.
+- **Build 1 -** In-workflow cancellation with asyncio.create_task.
   - The pattern for cancelling a long-running Nexus Operation from inside a workflow without cancelling the whole workflow.
   - See samples-python.
-- **Build 2** Handler cleanup with asyncio.shield.
+- **Build 2 -** Handler cleanup with asyncio.shield.
   - Making handler cleanup work even when the caller has cancelled.
   - See samples-python.
-- **Build 3** Multi-handler endpoints.
+- **Build 3 -** Multi-handler endpoints.
   - One Endpoint serving multiple Service handlers, registry-style routing.
-- **Build 4** Standalone activities for unreliable external HTTP. GA-imminent on Temporal Cloud.
+- **Build 4 -** Standalone activities for unreliable external HTTP. GA-imminent on Temporal Cloud.
   - For wrapping flaky third-party APIs that would otherwise trip the Nexus circuit breaker if called directly from a sync handler.
   - Per Phil Prasek (lead PM, Nexus): "the only way to wrap arbitrary external HTTP calls that are not super rock solid in reliability is going to be using the standalone activities." Coinbase co-launch Wed 2026-05-06.
   - **Live-workshop hook (verbal-only):** "This becomes GA the day after this workshop, on Wednesday 2026-05-06." Memorable date the room can carry away. Co-launch with **Coinbase** (do not name them on the slide; the customer name lives in this note for delivery context only).
-- **Build 5** Cross-region and cross-account on Temporal Cloud.
+- **Build 5 -** Cross-region and cross-account on Temporal Cloud.
   - Nexus crosses namespaces. Cross-region and cross-account each have additional considerations.
   - docs.temporal.io/cloud/nexus is the entry point.
-- **Build 6** The SDK samples repos cover the in-workflow patterns. Standalone activities ship alongside the Nexus features it pairs with.
+- **Build 6 -** The SDK samples repos cover the in-workflow patterns. Standalone activities ship alongside the Nexus features it pairs with.
   - In-workflow patterns are documented in samples-python and equivalent SDK repos. Standalone activities will follow the same publication path.
 -->
 
@@ -225,15 +225,15 @@ The Service contract you wrote today works on both self-hosted and Cloud. The op
 
 <!--
 - The contract is portable. The Cloud differentiators sit on the operator surface (security, routing, ceilings), not the developer surface.
-- **Build 1** Per-Endpoint allowlist.
+- **Build 1 -** Per-Endpoint allowlist.
   - Already covered as a Ch3 punchline. Reiterate here in the wrap context: this is the single biggest enterprise-security selling point of Cloud Nexus.
-- **Build 2** mTLS Envoy mesh + audit logs.
+- **Build 2 -** mTLS Envoy mesh + audit logs.
   - Cloud manages the wire-level transport and gives you audit/metrics for free. Self-hosted teams build (or skip) this themselves.
-- **Build 3** Account-scoped Endpoints.
+- **Build 3 -** Account-scoped Endpoints.
   - Endpoint is global within an account. Self-hosted is global per cluster, which is different topology.
-- **Build 4** HA Namespaces and cross-region routing.
+- **Build 4 -** HA Namespaces and cross-region routing.
   - Federated control plane is Cloud-only. Self-hosted clusters can do Nexus inside a cluster, but cross-cluster federation is not a feature.
-- **Build 5** Production limits and Worker tuning.
+- **Build 5 -** Production limits and Worker tuning.
   - Same dials, different defaults. Cloud locks the 60-day async ceiling; self-hosted can raise it via `component.nexusoperations.limit.scheduleToCloseTimeout`. Cloud caps in-flight Operations per caller workflow at 30 today.
 
 ## Teaching notes
@@ -269,21 +269,21 @@ Today's Workflow-to-Workflow case is one application of a broader durable-RPC st
 </v-click>
 
 <!--
-- **Build 1** Connectors: invoke Nexus Operations from any protocol via inbound gateways and outbound connectors. HTTP, Kafka, MCP, and more.
+- **Build 1 -** Connectors: invoke Nexus Operations from any protocol via inbound gateways and outbound connectors. HTTP, Kafka, MCP, and more.
   - Mental model: an inbound gateway converts an HTTP / Kafka / MCP request into a Nexus Operation call. An outbound connector goes the other direction.
   - "I have a non-Temporal service that wants to invoke a Workflow durably" is real and common. The connector layer is how that lands. Roadmap, actively being built.
-- **Build 2** Agentic AI workflows over Nexus.
+- **Build 2 -** Agentic AI workflows over Nexus.
   - The MCP gateway in the connector model is the entry point for agentic callers. An AI agent that needs to invoke a workflow durably reaches the same Nexus Service contract every team-to-team caller already uses.
   - Same observability story for agentic and traditional workflows; the polyglot chapter already touched this.
-- **Build 3** Contract-first development: future IDL and CodeGen.
+- **Build 3 -** Contract-first development: future IDL and CodeGen.
   - For teams that prefer declarative IDL service definitions over decorator-on-class.
   - Define once, generate handlers and stubs across every SDK.
-- **Build 4** Per-caller rate limiting and fine-grained authorization.
+- **Build 4 -** Per-caller rate limiting and fine-grained authorization.
   - Operator-side. Matters when a Nexus Endpoint is shared by many internal teams.
-- **Build 5** Enhanced routing rules.
+- **Build 5 -** Enhanced routing rules.
   - Today an Endpoint carries a single routing rule: one (target Namespace, target Task Queue) pair. Future: multiple routing rules per Endpoint, which unlocks traffic-split, canary, and per-caller routing patterns without standing up a new Endpoint.
   - This is Phil Prasek's framing from the PR review: "Single routing rule today" is the precise way to describe the current state, and it lands cleaner than "one (Namespace, Task Queue)" once the multi-rule capability ships.
-- **Build 6** Today's Workflow-to-Workflow case is one application of a broader durable-RPC story. The platform is leaning in.
+- **Build 6 -** Today's Workflow-to-Workflow case is one application of a broader durable-RPC story. The platform is leaning in.
   - The "durable RPC" framing from Ch 1 generalizes here. The connector layer eliminates the Workflow-only-caller asterisk.
 
 ## Teaching notes
@@ -314,9 +314,9 @@ The cross-namespace self-service pattern this workshop teaches, at production sc
 
 <!--
 - This slide isolates the two production-grounded pointers so they get their own beat before the general resources list. Mason: "add it prominently."
-- **Build 1** Replay 2026 talk: Workflow-as-a-Service in production.
+- **Build 1 -** Replay 2026 talk: Workflow-as-a-Service in production.
   - Live, this week. "From Bottlenecks to Self-Service: How Duolingo Built Workflow-as-a-Service with Temporal Nexus" by Zhihao Wang (Staff Software Engineer, Duolingo). The conference talk version of the published case study; same shape, deeper detail. If the room is still on-site, point them at this talk explicitly.
-- **Build 2** Case study.
+- **Build 2 -** Case study.
   - The published Duolingo case study. Concrete numbers (30+ workflows shared across teams, hundreds of engineering hours saved), production architecture, the same Workflow-as-a-Service pattern this workshop teaches at smaller scale.
 
 ## Teaching notes
@@ -353,22 +353,22 @@ Bring the contract you wrote today back to your team. Pick one cross-team call. 
 </v-click>
 
 <!--
-- **Build 1** Docs: `docs.temporal.io/nexus`
+- **Build 1 -** Docs: `docs.temporal.io/nexus`
   - The reference. Conceptual overview, API specs per SDK, FAQs.
-- **Build 2** Temporal Cloud-specific Nexus: `docs.temporal.io/cloud/nexus`
+- **Build 2 -** Temporal Cloud-specific Nexus: `docs.temporal.io/cloud/nexus`
   - Cross-account and cross-region considerations live here, not in the main Nexus docs.
-- **Build 3** Versioning: Service contract changes are an additive-and-rollout problem.
+- **Build 3 -** Versioning: Service contract changes are an additive-and-rollout problem.
   - `docs.temporal.io/worker-versioning` covers the workflow-code side. The Service-contract side follows the same playbook as gRPC or OpenAPI.
-- **Build 4** Tutorial: Java sync Nexus tutorial on learn.temporal.io
+- **Build 4 -** Tutorial: Java sync Nexus tutorial on learn.temporal.io
   - The published tutorial this workshop is built on top of.
   - Worth pointing at attendees who want to do the same thing in Java.
-- **Build 5** Samples: `samples-python/nexus` and the equivalent in your SDK
+- **Build 5 -** Samples: `samples-python/nexus` and the equivalent in your SDK
   - Working code in every SDK. The fastest way to bootstrap a new project.
   - The samples-python repo has the cleanest Python examples.
-- **Build 6** Community: `#nexus` channel in the Temporal Community Slack
+- **Build 6 -** Community: `#nexus` channel in the Temporal Community Slack
   - SDK maintainers hang out there. So do early Nexus adopters.
   - Get an invite from temporal.io/slack if they don't already have one.
-- **Build 7** Bring the contract you wrote today back to your team. Pick one cross-team call. Ship it through Nexus.
+- **Build 7 -** Bring the contract you wrote today back to your team. Pick one cross-team call. Ship it through Nexus.
   - "Pick one call" is the right scope: not "rewrite your platform," just one call.
 -->
 

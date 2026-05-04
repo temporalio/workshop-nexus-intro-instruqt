@@ -35,19 +35,19 @@ What Java has to do: `@Operation(name = "snake_case_name")` on methods, `@JsonPr
 - The Compliance team rewrites their Worker in Java. We change nothing in Python.
   - A year from now, Compliance hired Java engineers.
   - The Python caller team has zero changes to ship.
-- **Build 1** Stop the Python Compliance Worker.
+- **Build 1 -** Stop the Python Compliance Worker.
   - In a terminal: `pkill -f "python -m compliance.worker"` (or your Instruqt control).
   - The Python and Java compliance workers cannot share `compliance-risk` safely; only one runs at a time.
-- **Build 2** Start the pre-built Java Compliance Worker on the same task queue.
+- **Build 2 -** Start the pre-built Java Compliance Worker on the same task queue.
   - The Java worker is pre-built and on the `java-legacy` container.
   - Same task queue (`compliance-risk`), same namespace (`compliance-namespace`).
   - Same Endpoint (`compliance-endpoint`) routes to it.
-- **Build 3** Run `python -m payments.starter` and watch TXN-A.
+- **Build 3 -** Run `python -m payments.starter` and watch TXN-A.
   - From the Chapter 7 solution directory. Same Python caller, no code changes.
-- **Build 4** TXN-A returns LOW and completes against a Java-authored workflow in `compliance-namespace`.
+- **Build 4 -** TXN-A returns LOW and completes against a Java-authored workflow in `compliance-namespace`.
   - In the Web UI, filter compliance-namespace. Find `compliance-ch07-TXN-A` (the Java handler reuses the Ch 7 chapter prefix to stay consistent with the Python convention).
   - The workflow type or stack trace will show Java metadata.
-- **Build 5** What Java had to do to earn "no Python change": `@Operation(name = "snake_case_name")` on each method, and `@JsonProperty("snake_case_name")` on every dataclass field. Without both, Python's call fails with `NOT_FOUND` or `UnrecognizedPropertyException`. The contract earns its claim through wire-level discipline, not magic.
+- **Build 5 -** What Java had to do to earn "no Python change": `@Operation(name = "snake_case_name")` on each method, and `@JsonProperty("snake_case_name")` on every dataclass field. Without both, Python's call fails with `NOT_FOUND` or `UnrecognizedPropertyException`. The contract earns its claim through wire-level discipline, not magic.
   - The wire-level rule: snake_case names on both sides, every field, every method.
 
 ## Teaching notes
@@ -81,16 +81,16 @@ The Service contract is the universal interface. Every SDK speaks it.
 </v-click>
 
 <!--
-- **Build 1** A team that prefers Java doesn't need a Python rewrite to integrate.
+- **Build 1 -** A team that prefers Java doesn't need a Python rewrite to integrate.
   - Each team picks the SDK that fits their existing skill set.
-- **Build 2** A vendor library that ships in Go doesn't block a TypeScript adopter.
+- **Build 2 -** A vendor library that ships in Go doesn't block a TypeScript adopter.
   - Wrap the Go library in a Nexus handler. Call from TypeScript. Done.
-- **Build 3** An old service in JVM-land doesn't need a sidecar to talk to new Temporal apps.
+- **Build 3 -** An old service in JVM-land doesn't need a sidecar to talk to new Temporal apps.
   - Old Java service exposes a Nexus handler. New apps in any SDK can call it.
   - No HTTP API, no protobuf schema, no sidecar process.
-- **Build 4** Agentic AI workflows and traditional business workflows live under one observability story across the two codebases.
+- **Build 4 -** Agentic AI workflows and traditional business workflows live under one observability story across the two codebases.
   - Same Service contract, same Endpoint surface, same Event History shape. One observability story regardless of which codebase the work runs in.
-- **Build 5** The Service contract is the universal interface. Every SDK speaks it.
+- **Build 5 -** The Service contract is the universal interface. Every SDK speaks it.
 
 ## Teaching notes
 

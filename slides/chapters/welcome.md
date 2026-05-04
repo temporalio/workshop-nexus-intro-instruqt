@@ -51,19 +51,19 @@ You'll write Python today. The Temporal concepts transfer to every other SDK.
 - A real-world payments scenario, running on Temporal.
   - The scenario is intentionally narrow: validate a transaction, run compliance, execute the payment
   - Every Temporal user has a moral equivalent of this in their codebase
-- **Build 1** A Payments team with a `PaymentProcessingWorkflow`
+- **Build 1 -** A Payments team with a `PaymentProcessingWorkflow`
   - Owns validate and execute
   - Today this team starts as the only team and ends with a clean boundary
-- **Build 2** A Compliance team with risk checks and human review
+- **Build 2 -** A Compliance team with risk checks and human review
   - Today they're co-tenants of one Worker. By 11:00 they own their own namespace.
   - Their work includes both an automated rule check **and** a human-in-the-loop reviewer path
-- **Build 3** One Nexus Endpoint routing calls between them, across namespace boundaries
+- **Build 3 -** One Nexus Endpoint routing calls between them, across namespace boundaries
   - This is the moment the architecture changes shape
   - The Endpoint is the public DNS-equivalent for cross-team Temporal calls
-- **Build 4** A second handler in **Java**, hitting the same Service contract from a Python caller
+- **Build 4 -** A second handler in **Java**, hitting the same Service contract from a Python caller
   - Demo only, not an exercise. About 5 minutes near the end.
   - The point is to feel the contract is universal, regardless of SDK
-- **Build 5** You'll write Python today. The Temporal concepts transfer to every other SDK.
+- **Build 5 -** You'll write Python today. The Temporal concepts transfer to every other SDK.
   - Same Service / Operation / Endpoint vocabulary in Go, TypeScript, Java, .NET
   - APIs differ at the surface; the concepts are identical
 -->
@@ -145,16 +145,16 @@ Brand new to **Nexus**. That's the goal of today.
 
 <!--
 - You're comfortable with Temporal's core model and the Python programming language.
-- **Build 1** Workflows, Activities, and Workers.
+- **Build 1 -** Workflows, Activities, and Workers.
   - Workflows = durable orchestrators. Activities = work that touches the outside world. Workers = the processes hosting both.
-- **Build 2** Signals, Queries, and Updates.
+- **Build 2 -** Signals, Queries, and Updates.
   - Updates is the load-bearing one for today.
   - Signals are write-only from outside. Queries are read-only. Updates are write-with-return-value.
-- **Build 3** Temporal timeouts: start_to_close, schedule_to_close, and schedule_to_start.
+- **Build 3 -** Temporal timeouts: start_to_close, schedule_to_close, and schedule_to_start.
   - The room needs to recognize these names; we'll use all three on async Nexus calls.
-- **Build 4** The Temporal Web UI and Event History.
+- **Build 4 -** The Temporal Web UI and Event History.
   - We read Event History live more than once today.
-- **Build 5** Brand new to Nexus. That's the goal of today.
+- **Build 5 -** Brand new to Nexus. That's the goal of today.
 
 ## Teaching notes
 
@@ -180,15 +180,15 @@ layout: default
 </v-clicks>
 
 <!-- 
-- Have a question? Just raise your hand
-  - I'll come to a stopping point and answer
-  - Would rather you ask in the moment so the question is in context
-  - **I do reserve the right to go "Great question! Find me later and let's discuss.**
-    - Sometimes your question will be answered later
-    - Sometimes it's beyond the scope of the workshop and will take off off track
-- Getting help during the exercises
-  - Raise your hand, one of the TAs will come by and help
-  - You can also look in the Solution tab for the answer
+- **Build 1 -** Have a question? Just raise your hand
+- **Build 2 -** I'll come to a stopping point and answer
+- **Build 3 -** Would rather you ask in the moment so the question is in context
+- **Build 4 -** **I do reserve the right to go "Great question! Find me later and let's discuss.**
+  - Sometimes your question will be answered later
+  - Sometimes it's beyond the scope of the workshop and will take off off track
+- **Build 5 -** Getting help during the exercises
+- **Build 6 -** Raise your hand, one of the TAs will come by and help
+- **Build 7 -** You can also look in the Solution tab for the answer
 -->
 
 ---
@@ -211,14 +211,14 @@ layout: default
 </v-clicks>
 
 <!--
-- **Build 1** **Distinguish** when to use Nexus versus Child Workflows, Activities, and bespoke gateways for cross-team integration
-- **Build 2** **Name** the four Nexus building blocks: Service, Operation, Endpoint, and Registry
-- **Build 3** **Define** a typed Nexus Service contract that both teams import
-- **Build 4** **Implement** synchronous and asynchronous Nexus Operation handlers
-- **Build 5** **Invoke** a Nexus Operation from a caller Workflow across a Namespace boundary
-- **Build 6** **Propagate** a Workflow Update through Nexus for human-in-the-loop review
-- **Build 7** **Configure** Nexus Operations for cancellation, error handling, and the circuit breaker
-- **Build 8** **Recognize** the same Service contract serving handlers in multiple SDKs
+- **Build 1 -** **Distinguish** when to use Nexus versus Child Workflows, Activities, and bespoke gateways for cross-team integration
+- **Build 2 -** **Name** the four Nexus building blocks: Service, Operation, Endpoint, and Registry
+- **Build 3 -** **Define** a typed Nexus Service contract that both teams import
+- **Build 4 -** **Implement** synchronous and asynchronous Nexus Operation handlers
+- **Build 5 -** **Invoke** a Nexus Operation from a caller Workflow across a Namespace boundary
+- **Build 6 -** **Propagate** a Workflow Update through Nexus for human-in-the-loop review
+- **Build 7 -** **Configure** Nexus Operations for cancellation, error handling, and the circuit breaker
+- **Build 8 -** **Recognize** the same Service contract serving handlers in multiple SDKs
 -->
 
 

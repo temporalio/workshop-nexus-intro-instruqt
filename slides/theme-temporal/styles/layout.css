@@ -224,3 +224,6 @@ body,
 .bg-rex           { background: #0B1020 url('../assets/rex.webp')           center/cover no-repeat; }
 .bg-glow          { background: #0B1020 url('../assets/glow.webp')          center/cover no-repeat; }
 .bg-plain   { background: var(--temporal-bg); }
+
+/* Speaker notes: "Build N -" markers, tagged at runtime by setup/main.ts. */
+.note-build-marker { color: #2563EB; }

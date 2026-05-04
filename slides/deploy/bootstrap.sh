@@ -193,7 +193,12 @@ fi
 caddy validate --config "$TMPFILE" --adapter caddyfile >/dev/null
 install -m 0644 "$TMPFILE" /etc/caddy/Caddyfile
 
+# Caddy's systemd unit runs as the 'caddy' user, so the log directory and any
+# files inside it must be writable by that user. `install -d` defaults to root
+# ownership; recursive chown also catches log files left over from a prior run
+# that started as root before this fix landed.
 install -d -m 0755 /var/log/caddy
+chown -R caddy:caddy /var/log/caddy
 
 # --------- 6. start services ---------
 

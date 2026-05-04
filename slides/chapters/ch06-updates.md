@@ -37,13 +37,13 @@ That's a **Workflow Update**, sent through a Nexus Operation.
 - A LOW-risk transaction auto-approves. A HIGH-risk one auto-declines.
   - The ComplianceWorkflow already handles these two cases automatically.
   - These don't need humans. The rule engine returns a verdict, the workflow returns.
-- **Build 1** A MEDIUM-risk one currently auto-approves with an AML monitoring note. We should probably make this a human check instead.
+- **Build 1 -** A MEDIUM-risk one currently auto-approves with an AML monitoring note. We should probably make this a human check instead.
   - This is the bridge from Ch1's "flagged for additional checks" framing to a real human-review path.
   - Real-world examples for MEDIUM-as-human-review: refunds over $X, transactions to flagged jurisdictions, KYC borderline calls.
-- **Build 2** The handler workflow is already running. We need to wake it up with a decision.
+- **Build 2 -** The handler workflow is already running. We need to wake it up with a decision.
   - The workflow exists, it's paused, we don't start a new one.
   - The decision arrives from the outside (a human reviewer) and goes into a running workflow.
-- **Build 3** That's a Workflow Update, sent through a Nexus Operation.
+- **Build 3 -** That's a Workflow Update, sent through a Nexus Operation.
   - Two concepts merge here: Workflow Updates (Temporal core) and Nexus Operations (this workshop).
   - The Update is the way to inject a decision into a running workflow.
   - The Nexus Operation is the way to do it across namespace boundaries.
@@ -79,16 +79,16 @@ Generally Available. The combination "Updates + Nexus" is what this chapter is a
 - A synchronous request-response into a running workflow.
   - Sync = caller waits for a return value.
   - Distinguishes from Signal (fire-and-forget, no return) and Query (read-only, no mutation).
-- **Build 1** Two stages: validator runs first; if it passes, handler runs and returns.
+- **Build 1 -** Two stages: validator runs first; if it passes, handler runs and returns.
   - The two-stage pattern is what makes Updates safe.
   - Validator is the precondition layer. Handler is the effect.
-- **Build 2** The validator runs synchronously in the workflow context and must not mutate state.
+- **Build 2 -** The validator runs synchronously in the workflow context and must not mutate state.
   - Must-not-mutate is the surface rule. The deeper reason comes on the validator slide: replay determinism.
-- **Build 3** If the validator raises, the Update is rejected and no event is written to History at all.
+- **Build 3 -** If the validator raises, the Update is rejected and no event is written to History at all.
   - No `WorkflowExecutionUpdateAccepted`. No Rejected. No Completed. The workflow's history is unchanged.
   - That is what "validate before accept" buys you.
-- **Build 4** Exactly the right primitive for "human submits a decision, workflow uses it to continue."
-- **Build 5** Generally Available. The combination "Updates + Nexus" is what this chapter is about.
+- **Build 4 -** Exactly the right primitive for "human submits a decision, workflow uses it to continue."
+- **Build 5 -** Generally Available. The combination "Updates + Nexus" is what this chapter is about.
   - Updates and Nexus were designed alongside each other; the combination is the canonical "tell-a-running-workflow-X" pattern.
   - Worth saying aloud here: today, Nexus Updates are sync-only, bound by the same 10-second per-request ceiling as any sync Nexus handler. That is the shape this chapter teaches. The Nexus team is working on async Nexus Updates with their own callback semantics for arbitrary duration; not GA yet, mention only as the future direction.
 
@@ -121,16 +121,16 @@ The handler runs **inside the workflow**, mutating its state durably.
 
 <!--
 - The Update handler. Half of a two-stage pattern. Validator next.
-- **Build 1 (whole code)** The full Update handler.
-- **Build 2 (line 1, decorator)** `@workflow.update`
+- **Build 1 (whole code) -** The full Update handler.
+- **Build 2 (line 1, decorator) -** `@workflow.update`
   - This decorator marks `review` as a Workflow Update handler.
   - Updates are write-with-return-value: they mutate state and return a result.
-- **Build 3 (line 2, signature)** `async def review(self, approved: bool, explanation: str) -> ComplianceResult`
+- **Build 3 (line 2, signature) -** `async def review(self, approved: bool, explanation: str) -> ComplianceResult`
   - Two arguments and a typed return. The return value flows back to the caller.
-- **Build 4 (lines 3-7, body)** `self._review_result = ComplianceResult(...); return self._review_result`
+- **Build 4 (lines 3-7, body) -** `self._review_result = ComplianceResult(...); return self._review_result`
   - The durable mutation. `_review_result` is what `run()` is waiting for in `wait_condition`.
   - Setting this is what unblocks the workflow.
-- **Build 5** The handler runs **inside the workflow**, mutating its state durably.
+- **Build 5 -** The handler runs **inside the workflow**, mutating its state durably.
   - "Inside the workflow" means: same event loop, same state, same history.
   - Mutations made here are durable. If the worker crashes mid-handler, the workflow replays and lands in the same state.
 - This handler runs only AFTER the validator passes.
@@ -178,23 +178,23 @@ Deeper reason: validators run during a Workflow Task that may be **replayed**. N
 
 <!--
 - The validator. Side-effect-free guard that runs before the handler.
-- **Build 1 (whole code)** The full validator.
-- **Build 2 (line 1, decorator)** `@review.validator`
+- **Build 1 (whole code) -** The full validator.
+- **Build 2 (line 1, decorator) -** `@review.validator`
   - Bound to the `review` Update handler from the previous slide.
   - Temporal calls this first; only if it returns without raising does the handler run.
-- **Build 3 (line 2, signature)** `def validate_review(self, approved: bool, explanation: str) -> None`
+- **Build 3 (line 2, signature) -** `def validate_review(self, approved: bool, explanation: str) -> None`
   - Same arguments as the handler. Returns None. Raises to reject.
   - **Not async.** Validators are synchronous and side-effect-free.
-- **Build 4 (lines 3-6, guards)** Two guards.
+- **Build 4 (lines 3-6, guards) -** Two guards.
   - "Is the workflow ready for review?" (only MEDIUM risk waits)
   - "Has a review already happened?" (idempotency)
   - If either raises, the caller sees `WorkflowExecutionUpdateRejected`.
-- **Build 5** The validator runs before the Update is accepted. Idempotency happens here.
+- **Build 5 -** The validator runs before the Update is accepted. Idempotency happens here.
   - A double-click on the approve button doesn't double-approve.
   - First call passes the validator, sets `_review_result`. Second call fails the validator.
-- **Build 6** If the validator raises, the Update is rejected silently from History's perspective. No `UpdateAccepted`. No `UpdateRejected`. No `UpdateCompleted`. That is what "validate before accept" buys you.
+- **Build 6 -** If the validator raises, the Update is rejected silently from History's perspective. No `UpdateAccepted`. No `UpdateRejected`. No `UpdateCompleted`. That is what "validate before accept" buys you.
   - This is the single property that makes Updates safer than Signals for "is this allowed?" gating.
-- **Build 7** The deeper "no writes" reason: the validator runs during a workflow task that may be replayed. Any non-determinism here corrupts replay.
+- **Build 7 -** The deeper "no writes" reason: the validator runs during a workflow task that may be replayed. Any non-determinism here corrupts replay.
   - The surface rule (no mutation) and the deep rule (no non-determinism) collapse to the same advice: keep the validator pure.
 
 ## Teaching notes
@@ -257,20 +257,20 @@ async def run(self, request: ComplianceRequest) -> ComplianceResult:
 
 <!--
 - The workflow's `run()` method needs to know when to wait. That's `wait_condition`.
-- **Build 1 (whole code)** The full `run()` method.
-- **Build 2 (lines 3-7, the activity call)** `await workflow.execute_activity(check_compliance, ...)`
+- **Build 1 (whole code) -** The full `run()` method.
+- **Build 2 (lines 3-7, the activity call) -** `await workflow.execute_activity(check_compliance, ...)`
   - Standard Activity call. Runs the rule-based check. Stores the result on `self._auto_result`.
   - This is what we built in Chapter 5.
-- **Build 3 (lines 9-12, the LOW/HIGH branch)** `if self._auto_result.risk_level != "MEDIUM": return self._auto_result`
+- **Build 3 (lines 9-12, the LOW/HIGH branch) -** `if self._auto_result.risk_level != "MEDIUM": return self._auto_result`
   - LOW or HIGH = automatic verdict. Return immediately. No human needed.
-- **Build 4 (lines 14-15, the MEDIUM pause)** `await workflow.wait_condition(lambda: self._review_result is not None)`
+- **Build 4 (lines 14-15, the MEDIUM pause) -** `await workflow.wait_condition(lambda: self._review_result is not None)`
   - The durable pause. The workflow sleeps here until the predicate flips true.
   - When the `review` Update fires and sets `_review_result`, the predicate evaluates true and `run()` resumes.
   - The worker can crash, restart, and the workflow lands here again. That's durability.
-- **Build 5 (whole code)**
-- **Build 6** LOW or HIGH returns immediately.
+- **Build 5 (whole code) -**
+- **Build 6 -** LOW or HIGH returns immediately.
   - Two-thirds of transactions never need a human. Fast path.
-- **Build 7** MEDIUM blocks on `wait_condition` until the `review` Update fires.
+- **Build 7 -** MEDIUM blocks on `wait_condition` until the `review` Update fires.
   - This can take seconds, minutes, hours, days. The workflow doesn't care.
   - For TXN-B in the exercise, it'll be however long it takes you to run `python -m payments.review_starter`.
 - This is the durability story Temporal is famous for, applied to human input.
@@ -304,16 +304,16 @@ If you only learn one Nexus design pattern today, **it is this one.** Cross-team
 </v-click>
 
 <!--
-- **Build 1** Sending an Update is a forwarding operation, not a unit of work.
+- **Build 1 -** Sending an Update is a forwarding operation, not a unit of work.
   - The handler isn't doing the compliance review. The compliance workflow is.
   - The handler is the bridge: caller workflow -> Nexus -> handler workflow.
-- **Build 2** Sub-second in practice. Well under the 10s sync deadline.
+- **Build 2 -** Sub-second in practice. Well under the 10s sync deadline.
   - The validator runs, the handler runs, the result returns. All inside one Update execution.
   - Updates have their own time bound (20 second default, separate from sync Nexus's 10s) but in practice the whole thing is fast.
-- **Build 3** The ComplianceWorkflow runs as long as it needs to. The sync handler is just a forwarder.
+- **Build 3 -** The ComplianceWorkflow runs as long as it needs to. The sync handler is just a forwarder.
   - Sync handler = forwarder. Async handler workflow = the actual work.
   - The 10s sync deadline never binds because we're not asking the sync handler to do compliance work.
-- **Build 4** If you only learn one Nexus design pattern today, it is this one.
+- **Build 4 -** If you only learn one Nexus design pattern today, it is this one.
   - Cross-team "tell-a-running-workflow-X" calls always follow this shape: sync Nexus handler -> Update on a running workflow.
 - The question this answers: "why is submit_review sync when check_compliance is async?"
 -->
@@ -348,18 +348,18 @@ The Nexus handler resolves the **running** ComplianceWorkflow by id.
 - The `submit_review` handler is **sync**, not async.
   - Sending an Update is fast: validator runs, handler runs, return. ≤10s comfortably.
   - Updates are not work, they are messages with return values.
-- **Build 1 (whole code)** The full handler signature + handle resolution.
-- **Build 2 (line 1, decorator)** `@nexusrpc.handler.sync_operation`
+- **Build 1 (whole code) -** The full handler signature + handle resolution.
+- **Build 2 (line 1, decorator) -** `@nexusrpc.handler.sync_operation`
   - Same decorator we used in Chapter 3 for `check_compliance` (before we converted it to async).
   - Sync is the right choice here.
-- **Build 3 (lines 2-6, signature)** `async def submit_review(self, ctx, input: ReviewRequest) -> ComplianceResult`
+- **Build 3 (lines 2-6, signature) -** `async def submit_review(self, ctx, input: ReviewRequest) -> ComplianceResult`
   - `ReviewRequest` carries `transaction_id`, `approved`, `explanation`.
   - Returns `ComplianceResult` directly (not a `WorkflowHandle`). Sync.
-- **Build 4 (lines 7-10, handle resolution)** `client = nexus.client(); handle = client.get_workflow_handle_for(...)`
+- **Build 4 (lines 7-10, handle resolution) -** `client = nexus.client(); handle = client.get_workflow_handle_for(...)`
   - `nexus.client()` is the per-process Temporal Client the handler can use to talk to the local namespace.
   - `get_workflow_handle_for(ComplianceWorkflow.run, workflow_id="compliance-ch06-{txn_id}")` resolves the running ComplianceWorkflow by its deterministic id.
   - Same id we set in Chapter 5's start_workflow call. That's why determinism matters.
-- **Build 5** The Nexus handler resolves the **running** ComplianceWorkflow by id.
+- **Build 5 -** The Nexus handler resolves the **running** ComplianceWorkflow by id.
   - Key word: **running**. The workflow already exists from Chapter 5. We're not starting a new one.
 -->
 
@@ -391,19 +391,19 @@ It sends the Update and awaits the result, all within the 10s sync deadline.
 </v-click>
 
 <!--
-- **Build 1 (whole code)** The execute_update call.
-- **Build 2 (line 1, execute_update + return)** `return await handle.execute_update(...)`
+- **Build 1 (whole code) -** The execute_update call.
+- **Build 2 (line 1, execute_update + return) -** `return await handle.execute_update(...)`
   - Sends the Update and awaits the result.
   - The validator runs first on the workflow side; if it raises, this raises too.
   - If the validator passes, the handler runs and returns a `ComplianceResult`.
-- **Build 3 (line 2, target)** `ComplianceWorkflow.review`
+- **Build 3 (line 2, target) -** `ComplianceWorkflow.review`
   - Reference to the Update handler, not a string. Type-checked.
-- **Build 4 (line 3, args)** `args=[input.approved, input.explanation]`
+- **Build 4 (line 3, args) -** `args=[input.approved, input.explanation]`
   - Positional args passed to the Update handler.
   - `args=` is required as a keyword. Easy to forget.
-- **Build 5** It sends the Update and awaits the result, all within the 10s sync deadline.
+- **Build 5 -** It sends the Update and awaits the result, all within the 10s sync deadline.
   - Sync deadline is plenty. Validator + handler + return is sub-second in practice.
-- **Build 6** `handle.execute_update(...)` is shorthand for `start_update(..., wait_for_stage=COMPLETED)`. If you only need a receipt that the validator passed, use `start_update(..., wait_for_stage=ACCEPTED)`. Faster. Less coupling.
+- **Build 6 -** `handle.execute_update(...)` is shorthand for `start_update(..., wait_for_stage=COMPLETED)`. If you only need a receipt that the validator passed, use `start_update(..., wait_for_stage=ACCEPTED)`. Faster. Less coupling.
   - ACCEPTED returns as soon as the validator passes; COMPLETED waits for the handler to finish.
   - The choice is a coupling trade-off: do you need the result, or do you just need confirmation that the workflow accepted the request?
 
@@ -437,20 +437,20 @@ The reviewer never reaches across into `compliance-namespace`. **The Nexus contr
 
 <!--
 - Why a workflow at all? Because the reviewer's UX should match every other workflow start in the system.
-- **Build 1** The reviewer should not need a Temporal Client.
+- **Build 1 -** The reviewer should not need a Temporal Client.
   - If the reviewer were calling Update directly, they'd need their own Temporal Client.
   - That couples them to the namespace, the workflow type, and the workflow id format.
   - All things they shouldn't need to know.
-- **Build 2** ReviewCallerWorkflow is the reviewer-facing entry point.
+- **Build 2 -** ReviewCallerWorkflow is the reviewer-facing entry point.
   - One Nexus call, return, done.
   - The workflow exists for two seconds. That's fine.
-- **Build 3** Symmetric with how transactions are kicked off via PaymentProcessingWorkflow.
+- **Build 3 -** Symmetric with how transactions are kicked off via PaymentProcessingWorkflow.
   - The mental model the reviewer already has: "I start a workflow, it does stuff, it returns."
   - Reviewers don't need a different mental model than transaction-starters.
-- **Build 4** Short-lived: lifetime of the Nexus call.
+- **Build 4 -** Short-lived: lifetime of the Nexus call.
   - The history of ReviewCallerWorkflow has: WorkflowExecutionStarted, NexusOperationScheduled, NexusOperationCompleted, WorkflowExecutionCompleted.
   - Four events. Easy to read.
-- **Build 5** The reviewer never reaches across into compliance-namespace. The Nexus contract is the only path.
+- **Build 5 -** The reviewer never reaches across into compliance-namespace. The Nexus contract is the only path.
   - Same boundary discipline as Chapter 4.
   - Reviewer is on the Payments side. Their workflow runs in payments-namespace. The Nexus call crosses the boundary.
 - The pre-supplied review_starter.py kicks off this workflow. It's mechanical glue.
@@ -494,16 +494,16 @@ A short-lived caller workflow. Routes human input through Nexus, respects team b
 </style>
 
 <!--
-- **Build 1 (whole code)** The full ReviewCallerWorkflow.
-- **Build 2 (lines 2-5, class + entry point)** `class ReviewCallerWorkflow` with `submit_review` as the entry point.
+- **Build 1 (whole code) -** The full ReviewCallerWorkflow.
+- **Build 2 (lines 2-5, class + entry point) -** `class ReviewCallerWorkflow` with `submit_review` as the entry point.
   - Standard `@workflow.defn` + `@workflow.run`. Nothing exotic on this side.
   - Takes a `ReviewRequest`, returns a `ComplianceResult`.
-- **Build 3 (lines 6-10, the Nexus call)** `nexus_client = workflow.create_nexus_client(...); return await nexus_client.execute_operation(...)`
+- **Build 3 (lines 6-10, the Nexus call) -** `nexus_client = workflow.create_nexus_client(...); return await nexus_client.execute_operation(...)`
   - One Nexus call. Same `create_nexus_client` + `execute_operation` pattern from Chapter 4.
   - Calls `submit_review`, not `check_compliance`. Same Service contract, different Operation.
   - 10-second timeout matches the sync handler's deadline.
-- **Build 4 (whole code)**
-- **Build 5** A short-lived caller workflow. Routes human input through Nexus, respects team boundaries.
+- **Build 4 (whole code) -**
+- **Build 5 -** A short-lived caller workflow. Routes human input through Nexus, respects team boundaries.
   - "Short-lived" = lifetime of one Nexus call. Starts, calls, returns.
   - "Routes human input through Nexus" = the reviewer's decision flows in via Payments-side, out via Nexus, into Compliance.
   - "Respects team boundaries" = the reviewer never reaches across into compliance-namespace. The Nexus contract is the only path.
@@ -618,9 +618,9 @@ layout: default
 </v-clicks>
 
 <!--
-- **Build 1** A Workflow Update has two stages: a validator that reads state and raises, then a handler that writes state and returns
-- **Build 2** A rejected Update writes nothing to Event History. The validator is the precondition layer.
-- **Build 3** A synchronous Nexus handler that resolves a running workflow and forwards an Update is the canonical cross-team "tell-a-running-workflow-X" pattern
-- **Build 4** A short-lived caller workflow lets reviewers route human input through the same Service contract every other caller uses
-- **Build 5** The handler workflow's Event History records `WorkflowExecutionUpdateAccepted` and `WorkflowExecutionUpdateCompleted` for a successful Update
+- **Build 1 -** A Workflow Update has two stages: a validator that reads state and raises, then a handler that writes state and returns
+- **Build 2 -** A rejected Update writes nothing to Event History. The validator is the precondition layer.
+- **Build 3 -** A synchronous Nexus handler that resolves a running workflow and forwards an Update is the canonical cross-team "tell-a-running-workflow-X" pattern
+- **Build 4 -** A short-lived caller workflow lets reviewers route human input through the same Service contract every other caller uses
+- **Build 5 -** The handler workflow's Event History records `WorkflowExecutionUpdateAccepted` and `WorkflowExecutionUpdateCompleted` for a successful Update
 -->

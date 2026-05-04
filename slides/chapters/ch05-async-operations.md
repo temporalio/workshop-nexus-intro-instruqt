@@ -37,7 +37,7 @@ Sync handlers can't be cancelled because they hold no operation token. Async han
 - Caller events: sync = 2; async = 3. The added event is `Started`, recorded when the handler returns the operation token.
 - Time budget: sync = 10s per-request handler deadline (retried up to schedule-to-close); async = up to 60 days on Temporal Cloud, configurable on self-hosted.
 - Cancellable: sync no, async yes.
-- **Build 1** Sync handlers cannot be cancelled because they hold no operation token.
+- **Build 1 -** Sync handlers cannot be cancelled because they hold no operation token.
   - Cancellation rides on the operation token. Sync has no token, so sync cannot be cancelled.
 -->
 
@@ -73,15 +73,15 @@ The big shift: **durability moves from caller-only to caller AND handler.** The 
 <!--
 - Compliance checks can take **minutes**. Human reviews can take **hours**. Refund SLAs can take **days**.
   - "How many of you have a workflow that needs human approval?"
-- **Build 1** `@nexusrpc.handler.sync_operation` runs inline on the handler's Worker, bound by the 10-second per-request deadline.
+- **Build 1 -** `@nexusrpc.handler.sync_operation` runs inline on the handler's Worker, bound by the 10-second per-request deadline.
   - Sync = function call on the handler's Worker, ≤10 seconds per attempt. The caller's Workflow Task already completed when it scheduled the call; the caller is waiting durably (no Task open) for the operation to complete.
-- **Build 2** `@nexus.workflow_run_operation` returns a **WorkflowHandle** instead.
+- **Build 2 -** `@nexus.workflow_run_operation` returns a **WorkflowHandle** instead.
   - Different decorator. Different return type. Same Service contract.
   - The handler doesn't return the result; it returns a **handle to a workflow that will produce the result**.
-- **Build 3** The handler workflow runs durably on the Compliance Worker. The caller awaits its eventual result.
+- **Build 3 -** The handler workflow runs durably on the Compliance Worker. The caller awaits its eventual result.
   - "Eventual" is the key word. The caller awaits, the platform polls, the result comes back when the workflow finishes.
   - Up to 60 days on Temporal Cloud (self-hosted is configurable above 60 days via the `component.nexusoperations.limit.scheduleToCloseTimeout` dynamic config). Plenty of room for human-in-the-loop, batch jobs, slow APIs.
-- **Build 4** The big architectural change: durability moves from caller-only to caller AND handler. When the handler is a workflow, it survives Worker restarts on the implementer side. The caller does not have to know this.
+- **Build 4 -** The big architectural change: durability moves from caller-only to caller AND handler. When the handler is a workflow, it survives Worker restarts on the implementer side. The caller does not have to know this.
   - The decision rule: ≤10s deterministic, sync. Anything else, async.
   - The handler workflow is observable in the Web UI, retriable, and persistent. All the things you already love about Workflows.
 -->
@@ -114,18 +114,18 @@ async def check_compliance(
 
 <!--
 - The async handler is a thin shim over `Workflow.start`. Three things in three lines.
-- **Build 1 (whole code)** The full handler.
-- **Build 2 (line 1, decorator)** `@nexus.workflow_run_operation`
+- **Build 1 (whole code) -** The full handler.
+- **Build 2 (line 1, decorator) -** `@nexus.workflow_run_operation`
   - Different decorator from Chapter 3's `@sync_operation`. Same class, same Service contract, different per-method behavior.
-- **Build 3 (lines 3-4, signature)** `async def check_compliance(self, ctx: nexus.WorkflowRunOperationContext, input: ComplianceRequest)`
+- **Build 3 (lines 3-4, signature) -** `async def check_compliance(self, ctx: nexus.WorkflowRunOperationContext, input: ComplianceRequest)`
   - Different `ctx` type: `WorkflowRunOperationContext` instead of `StartOperationContext`.
   - Same input type. The contract didn't change.
   - Return type is `nexus.WorkflowHandle[ComplianceResult]` (not `ComplianceResult` directly).
-- **Build 4 (lines 5-9, body)** `return await ctx.start_workflow(ComplianceWorkflow.run, input, id=..., id_conflict_policy=...)`
+- **Build 4 (lines 5-9, body) -** `return await ctx.start_workflow(ComplianceWorkflow.run, input, id=..., id_conflict_policy=...)`
   - The handler **starts a workflow** and returns its handle.
   - `id=f"compliance-ch05-{input.transaction_id}"`: deterministic workflow id. Use the transaction id so retries hit the same workflow.
   - `id_conflict_policy=USE_EXISTING`: the idempotency knob.
-- **Build 5 (whole code)** Recap.
+- **Build 5 (whole code) -** Recap.
 - The Defining an Async Handler Explained slide carries the synthesis bullets.
 
 ## Teaching notes
@@ -150,16 +150,16 @@ layout: default
 </v-clicks>
 
 <!--
-- **Build 1** The handler starts a workflow and returns its handle.
+- **Build 1 -** The handler starts a workflow and returns its handle.
   - Three lines of glue. The handler doesn't run the work; it kicks off a workflow that runs the work.
-- **Build 2** The Nexus runtime delivers requests at-least-once. Without `USE_EXISTING`, a retried start tries to create a duplicate workflow and fails.
+- **Build 2 -** The Nexus runtime delivers requests at-least-once. Without `USE_EXISTING`, a retried start tries to create a duplicate workflow and fails.
   - At-least-once is the wire-level contract. Retries WILL happen.
-- **Build 3** With `USE_EXISTING`, the retry attaches to the existing workflow and returns its handle. Idempotent.
+- **Build 3 -** With `USE_EXISTING`, the retry attaches to the existing workflow and returns its handle. Idempotent.
   - Without it: two retries race, one wins, one fails. Bad UX, possible duplicate work.
   - With it: second caller attaches to the running workflow, gets the same eventual result.
-- **Build 4** Same flag enables fan-in: multiple Nexus callers subscribe to one running handler workflow.
+- **Build 4 -** Same flag enables fan-in: multiple Nexus callers subscribe to one running handler workflow.
   - One workflow, many waiters. Deduplicates work across callers.
-- **Build 5** Single most common production gotcha for async Nexus operations.
+- **Build 5 -** Single most common production gotcha for async Nexus operations.
   - Number-one mistake: forgetting `id_conflict_policy=USE_EXISTING`.
 -->
 
@@ -192,18 +192,18 @@ Mental model: an **address-book entry**, scoped to this Nexus call.
 - When an async handler returns a WorkflowHandle, the Nexus runtime stores an Operation Token.
   - Token = opaque string. Platform-issued.
   - Ties caller-side pending Operation to implementer-side running workflow.
-- **Build 1** The platform's internal identifier for "the long-running thing the caller is waiting for."
+- **Build 1 -** The platform's internal identifier for "the long-running thing the caller is waiting for."
   - You don't see it in caller code. You see it in observability.
-- **Build 2** Surfaced as Pending Nexus Operations rows on temporal workflow describe and in the Web UI.
+- **Build 2 -** Surfaced as Pending Nexus Operations rows on temporal workflow describe and in the Web UI.
   - Run `temporal workflow describe -w <id>` against a caller workflow and you'll see the row.
   - Fields: Endpoint, Service, Operation, OperationToken, State (Scheduled / BackingOff / Started / Blocked), Attempt, LastAttemptFailure, NextAttemptScheduleTime.
-- **Build 3** The platform uses it for cancellation propagation, completion delivery, and status queries.
+- **Build 3 -** The platform uses it for cancellation propagation, completion delivery, and status queries.
   - When the handler workflow finishes, the platform uses the token to forward the result back to the caller.
   - When the caller cancels, the platform uses the token to find and cancel the handler workflow.
   - Sync handlers have no token. That's why they can't be cancelled.
-- **Build 4** You almost never construct or parse it directly.
+- **Build 4 -** You almost never construct or parse it directly.
   - This is platform plumbing. You'll see it referenced in the docs and CLI output.
-- **Build 5** Mental model: an address-book entry, scoped to this Nexus call.
+- **Build 5 -** Mental model: an address-book entry, scoped to this Nexus call.
 
 ## Teaching notes
 
@@ -247,15 +247,15 @@ The async lifecycle adds one event in the middle.
 - Sync: Scheduled, Completed.
 - Async: Scheduled, **Started**, Completed.
 - The `Started` event is the signal that the handler is a workflow, not a function.
-- **Build 1** `Started` carries the **operation token**, your handle to the running handler workflow.
+- **Build 1 -** `Started` carries the **operation token**, your handle to the running handler workflow.
   - The operation token is how the platform identifies the long-running handler workflow.
   - You don't usually inspect it directly. The platform uses it for cancellation, completion, and updates back to the caller.
   - Think of it as the workflow's address book entry, scoped to this Nexus call.
-- **Build 2** Between `Started` and `Completed`, you'll see the Operation listed in **Pending Nexus Operations** on `temporal workflow describe`.
+- **Build 2 -** Between `Started` and `Completed`, you'll see the Operation listed in **Pending Nexus Operations** on `temporal workflow describe`.
   - Run `temporal workflow describe -w <caller-workflow-id>` to see it.
   - Pending Nexus Operations shows: operation name, state, attempt count, scheduled-to-close deadline.
   - Same diagnostic surface as Pending Activities for activities.
-- **Build 3** Diagnostic reflex. Scheduled but never Started, the implementer-side Worker is not picking it up: check `schedule_to_start_timeout`. Started but never Completed, the handler workflow is stuck or running long: check `start_to_close_timeout` and the workflow's own state.
+- **Build 3 -** Diagnostic reflex. Scheduled but never Started, the implementer-side Worker is not picking it up: check `schedule_to_start_timeout`. Started but never Completed, the handler workflow is stuck or running long: check `start_to_close_timeout` and the workflow's own state.
   - If you only see Scheduled and Completed in the caller's history, the handler ran inline (sync). If you see Started in the middle, it's a workflow.
 -->
 
@@ -288,26 +288,26 @@ await nexus_client.execute_operation(
 
 <!--
 - The three timeouts mirror the Activity timeouts. Same names, same meaning.
-- **Build 1 (whole code)** The full call.
-- **Build 2 (line 3, schedule-to-close)** `schedule_to_close_timeout=timedelta(minutes=10)`
+- **Build 1 (whole code) -** The full call.
+- **Build 2 (line 3, schedule-to-close) -** `schedule_to_close_timeout=timedelta(minutes=10)`
   - Total runtime budget. From the moment the Nexus call is scheduled to the moment it completes (or fails).
   - On Temporal Cloud, the maximum is **60 days**.
   - This is the umbrella timeout. The other two live inside it.
-- **Build 3 (line 4, schedule-to-start)** `schedule_to_start_timeout=timedelta(seconds=30)`
+- **Build 3 (line 4, schedule-to-start) -** `schedule_to_start_timeout=timedelta(seconds=30)`
   - How long to wait for a Compliance Worker to pick up the call.
   - If this trips, the message is "your implementer-side workers aren't healthy."
   - Use this to detect Compliance team outages without waiting for the full schedule-to-close.
-- **Build 4 (line 5, start-to-close)** `start_to_close_timeout=timedelta(minutes=8)`
+- **Build 4 (line 5, start-to-close) -** `start_to_close_timeout=timedelta(minutes=8)`
   - Per-attempt runtime, once a Compliance Worker has picked up the call.
   - For workflow-backed handlers, this is the max time **one attempt** of the handler workflow can take.
   - If this trips, the platform retries (subject to retry policy) up to schedule-to-close.
-- **Build 5 (whole code)** Recap.
-- **Build 6** The three nest. `schedule_to_close` is the outer ceiling; the other two live inside it.
+- **Build 5 (whole code) -** Recap.
+- **Build 6 -** The three nest. `schedule_to_close` is the outer ceiling; the other two live inside it.
   - Visualize as concentric circles: schedule-to-close holds everything; schedule-to-start and start-to-close live inside.
-- **Build 7** schedule-to-close: total runtime budget. Up to 60 days on Temporal Cloud.
-- **Build 8** schedule-to-start: how long to wait for a Compliance Worker to pick it up.
-- **Build 9** start-to-close: per-attempt runtime, once a Worker has it.
-- **Build 10** Self-hosted ceiling is configurable via `component.nexusoperations.limit.scheduleToCloseTimeout`. Temporal Cloud is locked at 60 days.
+- **Build 7 -** schedule-to-close: total runtime budget. Up to 60 days on Temporal Cloud.
+- **Build 8 -** schedule-to-start: how long to wait for a Compliance Worker to pick it up.
+- **Build 9 -** start-to-close: per-attempt runtime, once a Worker has it.
+- **Build 10 -** Self-hosted ceiling is configurable via `component.nexusoperations.limit.scheduleToCloseTimeout`. Temporal Cloud is locked at 60 days.
   - Knob you can turn on self-hosted but never on Temporal Cloud.
 
 ## Teaching notes
@@ -383,11 +383,11 @@ layout: default
 </v-clicks>
 
 <!--
-- **Build 1** An asynchronous Nexus handler is decorated with `@nexus.workflow_run_operation` and returns a `WorkflowHandle`
-- **Build 2** The async lifecycle adds a `NexusOperationStarted` event between `Scheduled` and `Completed`
-- **Build 3** The operation token ties the caller's pending Operation to the handler workflow on the implementer side
-- **Build 4** `Schedule-to-Close`, `Schedule-to-Start`, and `Start-to-Close` timeouts nest inside one another
-- **Build 5** `WorkflowIDConflictPolicy.USE_EXISTING` makes a workflow-backed handler idempotent on retry
+- **Build 1 -** An asynchronous Nexus handler is decorated with `@nexus.workflow_run_operation` and returns a `WorkflowHandle`
+- **Build 2 -** The async lifecycle adds a `NexusOperationStarted` event between `Scheduled` and `Completed`
+- **Build 3 -** The operation token ties the caller's pending Operation to the handler workflow on the implementer side
+- **Build 4 -** `Schedule-to-Close`, `Schedule-to-Start`, and `Start-to-Close` timeouts nest inside one another
+- **Build 5 -** `WorkflowIDConflictPolicy.USE_EXISTING` makes a workflow-backed handler idempotent on retry
 -->
 
 ---

@@ -46,15 +46,15 @@ In our workshop, **Compliance is the implementer** and owns `ComplianceNexusServ
 </v-click>
 
 <!--
-- **Build 1** In Python: a class decorated with `@nexusrpc.service`, with one typed `Operation[Input, Output]` per cross-team call.
+- **Build 1 -** In Python: a class decorated with `@nexusrpc.service`, with one typed `Operation[Input, Output]` per cross-team call.
   - Java uses `@Service` annotations. Go uses constants. .NET uses interfaces. Same idea, different surface.
   - Operations are type annotations on the class body. No `def`, no body. Just `name: nexusrpc.Operation[Input, Output]`.
-- **Build 2** **One team owns the contract.** They define the surface, ship the implementation, and authorize callers through the Endpoint.
+- **Build 2 -** **One team owns the contract.** They define the surface, ship the implementation, and authorize callers through the Endpoint.
   - Authorization is a real Nexus mechanism. The Endpoint has an allowlist of caller Namespaces. By default, no callers are allowed at all. The owning team decides who gets in.
-- **Build 3** Other teams import the contract types and call in. They depend on it; they don't change it.
+- **Build 3 -** Other teams import the contract types and call in. They depend on it; they don't change it.
   - Type-safety dependency, not authority. They use the contract's `Input` and `Output` types so their caller code is typed.
   - The owning team has the only write access. Other teams open PRs against it like they would for any service team.
-- **Build 4** **Compliance is the implementer** and owns `ComplianceNexusService`. Payments imports the types and calls through the Endpoint.
+- **Build 4 -** **Compliance is the implementer** and owns `ComplianceNexusService`. Payments imports the types and calls through the Endpoint.
   - The Service is named after the team that owns it; the name signals authority.
   - Compliance writes the contract, writes the implementation, registers the Endpoint, and decides Payments is allowed to call. Payments' write access is exactly zero.
 
@@ -91,15 +91,15 @@ A Nexus **Service** is that contract, expressed in your SDK's native types.
 </v-click>
 
 <!--
-- **Build 1** A typed surface the owner publishes and consumers depend on
+- **Build 1 -** A typed surface the owner publishes and consumers depend on
   - The contract is the interface. Consumers depend on it the same way they'd depend on a gRPC service definition.
-- **Build 2** Versioned, reviewable, breakable in a code review
+- **Build 2 -** Versioned, reviewable, breakable in a code review
   - Lives in source control. Diffs are reviewable. Breaking changes show up in PR.
   - Same change-management story you already have for protobuf or OpenAPI specs.
-- **Build 3** Defined first. Both sides build to it.
+- **Build 3 -** Defined first. Both sides build to it.
   - Contract-first discipline. The owner defines the shape, then both teams build their halves in parallel.
   - Same advice you'd give for any cross-team API.
-- **Build 4** A Nexus Service is that contract, expressed in your SDK's native types.
+- **Build 4 -** A Nexus Service is that contract, expressed in your SDK's native types.
   - No code generation step. Just Python (or Java, or Go).
   - "Native types" does not mean "single language." The wire format is JSON, you can also use proto defs, and Nexus rides the same data converters as the rest of Temporal. Polyglot is first-class — the Python contract on this slide can be implemented by a Java handler tomorrow without a Python change.
 -->
@@ -139,24 +139,24 @@ class ComplianceNexusService:
 </style>
 
 <!--
-- **Build 1 (whole code)** The full Service definition.
-- **Build 2 (line 1, import)** `import nexusrpc`
+- **Build 1 (whole code) -** The full Service definition.
+- **Build 2 (line 1, import) -** `import nexusrpc`
   - The Python package. Comes from the same `nexusrpc` library that ships with the Temporal SDK.
-- **Build 3 (lines 3-5, decorator + class)** `@nexusrpc.service` on `class ComplianceNexusService`
+- **Build 3 (lines 3-5, decorator + class) -** `@nexusrpc.service` on `class ComplianceNexusService`
   - The decorator marks this class as a Service definition.
   - The class is named after the team's domain ("Compliance"), not after the caller.
-- **Build 4 (line 6, check_compliance Operation)** `check_compliance: nexusrpc.Operation[ComplianceRequest, ComplianceResult]`
+- **Build 4 (line 6, check_compliance Operation) -** `check_compliance: nexusrpc.Operation[ComplianceRequest, ComplianceResult]`
   - Operation type signature. Input type, output type. That's the contract for one call.
   - No `def`. No body. Just a type annotation. The class never instantiates.
-- **Build 5 (line 7, submit_review Operation)** `submit_review: nexusrpc.Operation[ReviewRequest, ComplianceResult]`
+- **Build 5 (line 7, submit_review Operation) -** `submit_review: nexusrpc.Operation[ReviewRequest, ComplianceResult]`
   - Second Operation. Both share the `ComplianceResult` output type.
   - `ReviewRequest` is the input type for the human-review submission Operation.
-- **Build 6 (whole code again)**
-- **Build 7 (sub-bullet)** A class. No methods. Just typed Operation declarations.
+- **Build 6 (whole code again) -**
+- **Build 7 (sub-bullet) -** A class. No methods. Just typed Operation declarations.
   - The world's most boring class. The whole point is that it's pure shape.
-- **Build 8 (sub-bullet)** Each `Operation[Input, Output]` is one cross-team call.
+- **Build 8 (sub-bullet) -** Each `Operation[Input, Output]` is one cross-team call.
   - One Operation = one call. Add an Operation = add a call. Remove = remove. Versionable.
-- **Build 9 (sub-bullet)** This file is **imported by both teams.** Payments calls it; Compliance implements it.
+- **Build 9 (sub-bullet) -** This file is **imported by both teams.** Payments calls it; Compliance implements it.
   - Both sides depend on the same Python file. That file is the contract.
   - Compliance writes a handler against it; Payments creates a client from it.
   - The dataclasses (ComplianceRequest, ComplianceResult, ReviewRequest) are also shared.
@@ -189,20 +189,20 @@ Breaking changes require both teams to agree. **That is the boundary.**
 </v-click>
 
 <!--
-- **Build 1** Contract: shared/service.py. Both teams import it for type safety.
+- **Build 1 -** Contract: shared/service.py. Both teams import it for type safety.
   - The directory layout is intentional. Not under `payments/`, not under `compliance/`. A third location.
   - Strictly, only the implementer needs the contract to register handlers. Callers can call by string name. We import on both sides because the typed shape is the whole point.
-- **Build 2** Domain types live with the team that owns the data.
+- **Build 2 -** Domain types live with the team that owns the data.
   - `compliance.models.ComplianceRequest` and `ComplianceResult`: Compliance owns those shapes.
   - `shared.models.ReviewRequest`: cross-team type, lives in shared.
   - Each team owns the shapes they introduced.
-- **Build 3** Versioning is the same conversation you already have for gRPC or OpenAPI.
+- **Build 3 -** Versioning is the same conversation you already have for gRPC or OpenAPI.
   - Additive: add an Operation, add a field. Both teams roll out at their own pace.
   - Breaking: rename or remove. Two-team coordination required. Same playbook as protobuf or OpenAPI.
-- **Build 4** Hand-written today. Future IDL and CodeGen are coming.
+- **Build 4 -** Hand-written today. Future IDL and CodeGen are coming.
   - Today: hand-write the Service class in your SDK's native types, both teams import it.
   - Future: an IDL plus a CodeGen tool that generates handlers and stubs across every SDK. Roadmap; not how you do it in 2026.
-- **Build 5** Breaking changes require both teams to agree. That is the boundary.
+- **Build 5 -** Breaking changes require both teams to agree. That is the boundary.
 
 ## Teaching notes
 
@@ -233,15 +233,15 @@ The contract is not metadata. It **is** the integration.
 </v-click>
 
 <!--
-- **Build 1** Type-checked on both sides. Bad inputs and wrong return types fail at CI, not at deploy.
+- **Build 1 -** Type-checked on both sides. Bad inputs and wrong return types fail at CI, not at deploy.
   - The doc-canonical claim: type safety when invoking, plus the type system ensures handlers fulfill the contract.
   - Add a required field to `ComplianceResult`, the handler's return type fails type-check on Compliance's side. Drop a field the caller depends on, the call site fails on Payments' side. Mismatches surface in CI, both sides.
-- **Build 2** Refactor safely. Rename a field, the type checker shows every reference.
+- **Build 2 -** Refactor safely. Rename a field, the type checker shows every reference.
   - Cross-team rename is a real risk. The contract is the search index that makes it tractable.
-- **Build 3** Wire format is implied. Same dataclass, same JSON, same payload across SDKs.
+- **Build 3 -** Wire format is implied. Same dataclass, same JSON, same payload across SDKs.
   - This is the bullet that makes the polyglot demo work.
   - Java handler uses Jackson `@JsonProperty` annotations to align with Python's snake_case dataclasses. Both produce the same JSON. Same Service contract, two languages.
-- **Build 4** The contract is not metadata. It is the integration.
+- **Build 4 -** The contract is not metadata. It is the integration.
   - Once both teams have the contract, they can ship in parallel.
 
 ## Teaching notes
@@ -313,11 +313,11 @@ layout: default
 </v-clicks>
 
 <!--
-- **Build 1** A Nexus Service is a typed Python class decorated with `@nexusrpc.service`.
-- **Build 2** Each Operation is `Operation[Input, Output]` — one cross-team call. No methods on the class.
-- **Build 3** The contract lives in shared source; both teams import it for type safety.
-- **Build 4** Domain types live with the team that owns the data.
-- **Build 5** The contract is the integration.
+- **Build 1 -** A Nexus Service is a typed Python class decorated with `@nexusrpc.service`.
+- **Build 2 -** Each Operation is `Operation[Input, Output]` — one cross-team call. No methods on the class.
+- **Build 3 -** The contract lives in shared source; both teams import it for type safety.
+- **Build 4 -** Domain types live with the team that owns the data.
+- **Build 5 -** The contract is the integration.
   - Thesis-sentence reassertion. Per CLAUDE.md, this lands at Ch 1 ("From Weld to Contract") close, Ch 2 close (here), and again at the wrap.
 -->
 

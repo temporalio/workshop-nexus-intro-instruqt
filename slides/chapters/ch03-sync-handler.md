@@ -29,14 +29,14 @@ In our workshop, **Compliance implements** `check_compliance` as a sync handler.
 
 <!--
 - A Nexus Operation handler that runs and returns the typed result in one call, within the caller's deadline.
-- **Build 1** In Python: a method decorated with `@nexusrpc.handler.sync_operation`.
+- **Build 1 -** In Python: a method decorated with `@nexusrpc.handler.sync_operation`.
   - Per-method decorator. The class itself carries its own service-handler decorator that binds it to the Service contract.
   - The decorator accepts either `def` or `async def`; the workshop sample uses `async def` to stay consistent with the rest of the Python lab.
-- **Build 2** Runs inline in the implementer's Worker process. No Workflow runs on the implementer side.
+- **Build 2 -** Runs inline in the implementer's Worker process. No Workflow runs on the implementer side.
   - Sync = no handler Workflow exists. The handler is just a function call.
-- **Build 3** Returns the typed result directly. The caller awaits it like an Activity result.
+- **Build 3 -** Returns the typed result directly. The caller awaits it like an Activity result.
   - Same shape the room already knows from `await execute_activity(...)`. The new thing is that a different team runs it.
-- **Build 4** In our workshop, Compliance implements `check_compliance` as a sync handler. Payments awaits the result through the Endpoint.
+- **Build 4 -** In our workshop, Compliance implements `check_compliance` as a sync handler. Payments awaits the result through the Endpoint.
 
 ## Teaching notes
 
@@ -81,19 +81,19 @@ In our workshop, `check_compliance` runs a deterministic in-process rule check. 
 
 <!--
 - Sync handlers are bound by a hard 10-second per-request deadline. Use them for fast, reliable handoffs.
-- **Build 1** Forward to a workflow.
+- **Build 1 -** Forward to a workflow.
   - The most common production use case. The handler does almost nothing; it forwards to a workflow on the implementer side via `nexus.client()`.
   - The actual work runs on that workflow, durably, for as long as it needs to. The sync handler is the wire-level bridge.
-- **Build 2** Reliable in-process compute.
+- **Build 2 -** Reliable in-process compute.
   - Finishes in tens of milliseconds; never fails for retryable reasons. Deterministic rule checks, cached lookups, simple math.
   - Bounded by 10s, but in practice should be well under five seconds with margin.
-- **Build 3** Reliable downstream Temporal infrastructure.
+- **Build 3 -** Reliable downstream Temporal infrastructure.
   - Temporal Cloud APIs, Kafka producers, durable persistence layers your team already operates. The word "reliable" is doing the work in this bullet.
-- **Build 4** For arbitrary external HTTP, back with a Workflow or Standalone Activity.
+- **Build 4 -** For arbitrary external HTTP, back with a Workflow or Standalone Activity.
   - Five consecutive retryable errors on a (caller-Namespace, Endpoint) pair open the Nexus circuit breaker for 60 seconds. Timeouts, rate limits, 5xx all count as retryable.
   - Five users hitting the same flaky third-party API at once will trip it in seconds.
   - The fix is to hand off to a durable backing primitive: forward to a Workflow, or use a Standalone Activity (GA-imminent on Temporal Cloud). Same Service contract surface area is on the roadmap.
-- **Build 5** In our workshop, `check_compliance` runs a deterministic in-process rule check. That is the reliable case.
+- **Build 5 -** In our workshop, `check_compliance` runs a deterministic in-process rule check. That is the reliable case.
   - Bringing it back to the actual workshop code. The compliance check is basic math against the request, no external call. That is why sync is safe here.
 
 ## Teaching notes
@@ -132,17 +132,17 @@ A platform safety valve. Stops retries from piling up across callers in your Nam
 
 <!--
 - Set up the slide: most rooms have heard "circuit breaker" three times by now without knowing what it is. This slide pays that off.
-- **Build 1** **What it is.** Per-pair breaker. Closed during normal operation, opens when an endpoint looks unhealthy.
+- **Build 1 -** **What it is.** Per-pair breaker. Closed during normal operation, opens when an endpoint looks unhealthy.
   - Scope is `(caller-Namespace, Endpoint)`. Not global to the Endpoint, not per-Operation, not per-caller-Workflow. The smallest unit is the pair.
   - Same shape as the breaker pattern from any service-mesh background. The mechanism is not Temporal-specific; the placement (Nexus Machinery) is.
-- **Build 2** **When it trips.** Five consecutive retryable errors on the pair.
+- **Build 2 -** **When it trips.** Five consecutive retryable errors on the pair.
   - Retryable means: timeouts, rate limits, 5xx, and the "no Worker polling the handler Task Queue" case which surfaces as a timeout.
   - Five users hitting the same flaky downstream at the same time will trip it in seconds. The breaker counts errors, not callers.
-- **Build 3** **What happens.** New Operations get `State: Blocked` immediately. Handler never called.
+- **Build 3 -** **What happens.** New Operations get `State: Blocked` immediately. Handler never called.
   - 60 seconds open, then half-open with one probe.
   - Probe success: closed, normal traffic resumes.
   - Probe failure: another 60 seconds open. Repeats until the underlying problem is fixed.
-- **Build 4** **Why a trip is bad.** Every caller Workflow in your Namespace targeting that Endpoint is blocked.
+- **Build 4 -** **Why a trip is bad.** Every caller Workflow in your Namespace targeting that Endpoint is blocked.
   - This is the part the room needs to feel. A single bad downstream Endpoint freezes the whole integration for at least a minute at a time, and longer if the underlying problem persists.
   - Recovery is automatic, blast radius during the open window is not.
   - The state diagram for these transitions is on the next slide; flip to it when the room wants to see the lifecycle.
@@ -186,7 +186,7 @@ A trip self-recovers. Fix the underlying handler, the half-open probe succeeds, 
 <!--
 - This slide is the visual companion to the previous "The Circuit Breaker" mechanism slide.
 - Walk the diagram once aloud: Closed during normal operation, Open after 5 retryable errors, HalfOpen after the 60-second window, then either Closed on probe success or back to Open on probe failure (which restarts the 60-second clock).
-- **Build 1** A trip self-recovers.
+- **Build 1 -** A trip self-recovers.
   - You don't push a button to reset the breaker. The half-open probe is the platform's way of asking the endpoint "are you healthy yet?" Fix the underlying problem and the next probe carries traffic through.
   - The 60-second cadence keeps the system from hammering an unhealthy endpoint while still giving it a chance to recover quickly.
 
@@ -216,18 +216,18 @@ class ComplianceNexusServiceHandler:
 ```
 
 <!--
-- **Build 1 (whole code)** The full handler.
-- **Build 2 (lines 1-2, service_handler decorator + class)** `@nexusrpc.handler.service_handler(service=ComplianceNexusService)`
+- **Build 1 (whole code) -** The full handler.
+- **Build 2 (lines 1-2, service_handler decorator + class) -** `@nexusrpc.handler.service_handler(service=ComplianceNexusService)`
   - The class-level decorator binds this implementation to the Service contract Compliance owns.
   - Compliance ships this class; the contract is the same one Payments imports.
-- **Build 3 (line 4, sync_operation decorator)** `@nexusrpc.handler.sync_operation`
+- **Build 3 (line 4, sync_operation decorator) -** `@nexusrpc.handler.sync_operation`
   - Per-method decorator. Says "run inline, return within the deadline."
   - Decorator accepts `def` or `async def`; the workshop sample uses `async def` for consistency with the rest of the Python lab.
-- **Build 4 (lines 5-9, method signature)** Takes a `StartOperationContext` and the typed input; returns the typed output.
+- **Build 4 (lines 5-9, method signature) -** Takes a `StartOperationContext` and the typed input; returns the typed output.
   - Shape comes from the Service contract. Same `Input -> Output` shape as a function or an Activity.
-- **Build 5 (line 10, body)** `return run_rule_based_check(input)`
+- **Build 5 (line 10, body) -** `return run_rule_based_check(input)`
   - Just a function call. The handler runs, the result returns. No Workflow on this side.
-- **Build 6 (whole code again)** Recap: two decorators, one method, one return.
+- **Build 6 (whole code again) -** Recap: two decorators, one method, one return.
 
 ## Teaching notes
 
@@ -259,11 +259,11 @@ The class decorator picks the contract. The method decorator picks sync or async
 
 <!--
 - Two decorators, two decisions. Pull them apart so the room can see what each one is doing.
-- **Build 1** `@service_handler(service=...)` binds the class to the Service contract.
+- **Build 1 -** `@service_handler(service=...)` binds the class to the Service contract.
   - Decorator on the class = "I implement this contract." Same as `class Foo(Bar)` in any OO language.
-- **Build 2** `@sync_operation` declares this Operation's shape: run inline, return within the deadline.
+- **Build 2 -** `@sync_operation` declares this Operation's shape: run inline, return within the deadline.
   - Per-method decision. Each Operation on the Service can be sync or async independently.
-- **Build 3** The class decorator picks the contract. The method decorator picks sync or async. The implementer chooses per Operation.
+- **Build 3 -** The class decorator picks the contract. The method decorator picks sync or async. The implementer chooses per Operation.
 
 ## Teaching notes
 
@@ -298,19 +298,19 @@ The breaker can't tell the difference between "your handler has a bug" and "your
 
 <!--
 - The most common circuit-breaker trip in production has nothing to do with bad handler code.
-- **Build 1** Worker pool scaled to zero.
+- **Build 1 -** Worker pool scaled to zero.
   - Autoscalers tuned for cost can drain pollers when traffic dips. The next request can't find a Worker; the request times out.
   - Reflex: alert on poll count + Schedule-to-Start latency, not just on exception rates.
-- **Build 2** Deploy failed.
+- **Build 2 -** Deploy failed.
   - Rolling deploy where the new image crashes during startup. The old Workers have already drained, the new ones never come up.
   - Reflex: monitor deploy health, not just deploy completion.
-- **Build 3** Pod crashed.
+- **Build 3 -** Pod crashed.
   - OOM, panic, init-container failure. Pod restart loop while traffic still arrives at the Endpoint.
   - Reflex: handler-side liveness/readiness probes, k8s pod-restart alerts.
-- **Build 4** Task Queue moved.
+- **Build 4 -** Task Queue moved.
   - Endpoint configured against the old queue name; new Workers poll a different one. Endpoint sees zero pollers, every request times out.
   - Reflex: changing a handler's Task Queue is a coordinated change with the Endpoint registration.
-- **Build 5** The breaker can't tell the difference between "your handler has a bug" and "your handler isn't there."
+- **Build 5 -** The breaker can't tell the difference between "your handler has a bug" and "your handler isn't there."
   - Same five-timeouts-then-open behavior either way. The fix is operational, not code.
   - Production reflex: when a circuit breaker trips, check the Worker fleet first. Code changes second.
   - Footnote, only if a sharp learner asks: the breaker counts retryable errors. A handler that catches every exception and returns a non-retryable error will not trip the breaker even when it is busted. That sounds like a feature; it is actually how you mask a buggy handler. Pick error types deliberately.
@@ -351,13 +351,13 @@ A sync handler runs inline on the **implementer's** Worker, bound by a 10-second
 
 <!--
 - A sync handler runs inline on the implementer's Worker, bound by a 10-second per-request deadline measured by the caller's Nexus Machinery.
-- **Build 1** Configured by `component.nexusoperations.request.timeout` (default 10s).
+- **Build 1 -** Configured by `component.nexusoperations.request.timeout` (default 10s).
   - Same number on Temporal Cloud and on self-hosted; not a knob you tune in production.
-- **Build 2** Miss the deadline and the Machinery retries with exponential backoff up to `schedule_to_close_timeout`.
+- **Build 2 -** Miss the deadline and the Machinery retries with exponential backoff up to `schedule_to_close_timeout`.
   - One sync operation can wall-clock past 10 seconds across retried attempts; each individual attempt is still bounded by 10s.
-- **Build 3** Five consecutive timeouts trip the circuit breaker, blocking all calls from that caller-Namespace to the Endpoint.
+- **Build 3 -** Five consecutive timeouts trip the circuit breaker, blocking all calls from that caller-Namespace to the Endpoint.
   - Open state lasts 60 seconds, then a probe in half-open. Probe passes and we close; probe fails and we re-open.
-- **Build 4** Decision rule: under five seconds with margin, sync. Anything else, async.
+- **Build 4 -** Decision rule: under five seconds with margin, sync. Anything else, async.
   - Recall the rule from Ch1's Two Hard Limits. Five seconds is a safer ceiling: half the limit, plus headroom for slow days. The decision lives at design time, not at runtime.
 
 ## Teaching notes
@@ -397,17 +397,17 @@ The clock starts at the caller's History Service. Your handler code only runs af
 
 <!--
 - The clock starts at the caller's History Service. Your handler code only runs after the request has crossed the network and a Worker has picked it up.
-- **Build 1** Network hop. Caller's Service to handler's Service, potentially across regions.
+- **Build 1 -** Network hop. Caller's Service to handler's Service, potentially across regions.
   - Multi-region Nexus calls add tens to hundreds of milliseconds before the handler is even reached. Same-region is closer to a few ms.
-- **Build 2** Matching. A Worker has to be polling the Endpoint's Task Queue.
+- **Build 2 -** Matching. A Worker has to be polling the Endpoint's Task Queue.
   - Sync-match: a poller is already waiting, the Matching service hands the task straight over. Fastest path.
   - Async-match: no poller waiting, the task is written to persistence and picked up later. Adds a DB write and a DB read.
   - Healthy systems aim for 99%+ Poll Sync Rate.
-- **Build 3** Schedule-to-Start latency. The target SLO is 150ms p95. Without enough pollers, tasks queue up before they reach a Worker.
+- **Build 3 -** Schedule-to-Start latency. The target SLO is 150ms p95. Without enough pollers, tasks queue up before they reach a Worker.
   - "Add more pollers" is the lever. More pollers per Worker, more Worker replicas, until your Schedule-to-Start metric stays under SLO.
-- **Build 4** Handler code, plus its outbound calls.
+- **Build 4 -** Handler code, plus its outbound calls.
   - Every database read, every downstream HTTP call, every `nexus.client()` Signal/Query/Update counts against the same 10s budget.
-- **Build 5** "My code runs in 200ms" is not the same as "my call returns in under 10s." The infra is most of the budget.
+- **Build 5 -** "My code runs in 200ms" is not the same as "my call returns in under 10s." The infra is most of the budget.
   - The takeaway. Sync handlers are about end-to-end budget, not code budget. The "five seconds with margin" rule from earlier is meant to leave room for everything above your code.
 - And as said before: most production sync timeouts in the wild are implementer Workers not running. The Worker pool scaled to zero, the deploy failed, the pod crashed. The 10s budget runs out waiting for a Worker that never picks up.
 
@@ -479,17 +479,17 @@ The Compliance Worker is now the only thing that listens for `compliance-risk`.
 
 <!--
 - Worker registration is one new argument: `nexus_service_handlers=`. That's it.
-- **Build 1 (whole code)** The full Worker setup.
-- **Build 2 (line 2, handler import)** `from compliance.service_handler import ComplianceNexusServiceHandler`
+- **Build 1 (whole code) -** The full Worker setup.
+- **Build 2 (line 2, handler import) -** `from compliance.service_handler import ComplianceNexusServiceHandler`
   - The handler class we just wrote on the previous slide.
-- **Build 3 (line 5, namespace)** `"localhost:7233", namespace="compliance-namespace"`
+- **Build 3 (line 5, namespace) -** `"localhost:7233", namespace="compliance-namespace"`
   - This Worker connects to compliance-namespace, not payments-namespace.
   - The handler lives in the same Namespace as the Compliance team's other Workflows.
-- **Build 4 (line 11, nexus_service_handlers arg)** `nexus_service_handlers=[ComplianceNexusServiceHandler()]`
+- **Build 4 (line 11, nexus_service_handlers arg) -** `nexus_service_handlers=[ComplianceNexusServiceHandler()]`
   - The new argument. Pass a list of handler instances.
   - Right now this Worker only serves Nexus Operations; later in the workshop the same Worker also serves Workflows and Activities.
-- **Build 5 (whole code)**
-- **Build 6** The Compliance Worker is now the only thing that listens for `compliance-risk`.
+- **Build 5 (whole code) -**
+- **Build 6 -** The Compliance Worker is now the only thing that listens for `compliance-risk`.
   - Compliance owns its task queue. Payments doesn't poll it.
   - This is the structural change that makes Nexus useful.
 
@@ -531,16 +531,16 @@ Mental model: a **DNS entry**. Caller names `compliance-endpoint`; the platform 
 
 <!--
 - A reverse proxy with a routing entry in the Nexus Registry. Server-side artifact. Not code. Not committed to git. Created with a CLI command. Lives in the Registry until you delete it.
-- **Build 1** Carries a name, a target Namespace, a target Task Queue, and a Markdown description.
+- **Build 1 -** Carries a name, a target Namespace, a target Task Queue, and a Markdown description.
   - Four fields. The name is the public identifier. The Namespace + Task Queue is the routing target. The description renders as Markdown in the Web UI.
-- **Build 2** Created by the operator. Lives at the cluster level on self-hosted; at the Account level on Temporal Cloud.
+- **Build 2 -** Created by the operator. Lives at the cluster level on self-hosted; at the Account level on Temporal Cloud.
   - Operator = whoever runs `temporal` CLI commands. Could be platform team, could be the dev.
   - On Temporal Cloud the Endpoint is account-scoped. One Endpoint can be reached by callers across all your Namespaces.
-- **Build 3** The caller code references the name only.
+- **Build 3 -** The caller code references the name only.
   - Caller code: `endpoint="compliance-endpoint"`. That's it.
-- **Build 4** Mental model: a DNS entry.
+- **Build 4 -** Mental model: a DNS entry.
   - DNS entry: `compliance.api.company.com -> 10.0.0.42:8080`. Same shape. Caller never resolves the IP. Just uses the name.
-- **Build 5** Temporal Cloud has built-in security: every Endpoint specifies the allowed list of caller Namespaces. Default-deny, even for Workflows in the same Namespace as the target. Self-hosted does not have this.
+- **Build 5 -** Temporal Cloud has built-in security: every Endpoint specifies the allowed list of caller Namespaces. Default-deny, even for Workflows in the same Namespace as the target. Self-hosted does not have this.
   - Key takeaway worth landing slowly. The Endpoint is the access-control boundary. Compliance decides who can reach the contract; Payments doesn't unilaterally connect.
   - Default-deny means a misconfigured caller fails fast at runtime, not silently leaks access.
   - Self-hosted relies on Namespace-level controls; the per-Endpoint allowlist is a Temporal Cloud differentiator.
@@ -592,13 +592,13 @@ temporal operator nexus endpoint create \
   - `--target-namespace compliance-namespace`: where the handler runs.
   - `--target-task-queue compliance-risk`: which Task Queue the handler polls.
   - `--description-file`: optional, a markdown file shown in the Web UI for documentation.
-- **Build 1** Endpoint name is what the caller uses.
+- **Build 1 -** Endpoint name is what the caller uses.
   - Caller code names the Endpoint. Period. Not the Namespace, not the Task Queue.
   - Hide the implementation detail behind a stable name.
-- **Build 2** Target Namespace + Task Queue is where the handler lives.
+- **Build 2 -** Target Namespace + Task Queue is where the handler lives.
   - The Endpoint is the indirection: callers point at the name, the platform points the name at the handler location.
   - Move the handler? Update the Endpoint. Caller code unchanged.
-- **Build 3** Created once, shared by all callers.
+- **Build 3 -** Created once, shared by all callers.
   - One Endpoint per Service. Multiple caller Workflows can hit it. Multiple Worker instances on the implementer side handle the load.
 - Mental model recap: Service = the API. Endpoint = the URL. Registry = DNS.
 
@@ -653,13 +653,13 @@ The Compliance Worker is alive in `compliance-namespace` and the Endpoint can ro
   - The arrow from Payments Worker to the Endpoint is the Nexus call.
   - The dotted arrow from Endpoint to Compliance Worker is the routing.
   - Inside the Compliance Worker, the handler runs.
-- **Build 1** Two namespaces, two Workers, one Endpoint.
-- **Build 2** Compliance owns its task queue and its handler.
+- **Build 1 -** Two namespaces, two Workers, one Endpoint.
+- **Build 2 -** Compliance owns its task queue and its handler.
   - "Owns" means: deploys it, scales it, monitors it. Nobody else polls `compliance-risk`.
-- **Build 3** Payments doesn't import Compliance code, only the Service contract.
+- **Build 3 -** Payments doesn't import Compliance code, only the Service contract.
   - The Payments Worker only depends on `shared/service.py` and the dataclasses.
   - Compliance can rewrite `run_rule_based_check` however they want; Payments doesn't know.
-- **Build 4** The Compliance Worker is alive in `compliance-namespace` and the Endpoint can route to it. The caller is unchanged.
+- **Build 4 -** The Compliance Worker is alive in `compliance-namespace` and the Endpoint can route to it. The caller is unchanged.
 -->
 
 ---
@@ -708,10 +708,10 @@ layout: default
 </v-clicks>
 
 <!--
-- **Build 1** Sync handler decorator + inline + no handler workflow. The simplest shape.
-- **Build 2** 10-second per-request deadline + retry behavior.
-- **Build 3** Worker registration via `nexus_service_handlers=`. One new arg.
-- **Build 4** Endpoint creation via the CLI. Operator-side artifact.
-- **Build 5** Circuit breaker mechanism — per-pair, 5 errors, 60s.
-- **Build 6** Production reflex: most trips are Workers not running.
+- **Build 1 -** Sync handler decorator + inline + no handler workflow. The simplest shape.
+- **Build 2 -** 10-second per-request deadline + retry behavior.
+- **Build 3 -** Worker registration via `nexus_service_handlers=`. One new arg.
+- **Build 4 -** Endpoint creation via the CLI. Operator-side artifact.
+- **Build 5 -** Circuit breaker mechanism — per-pair, 5 errors, 60s.
+- **Build 6 -** Production reflex: most trips are Workers not running.
 -->

@@ -33,16 +33,16 @@ Each leaves a distinct trace in the caller's Event History or `temporal workflow
 <!--
 - A successful Operation flows Scheduled to Started to Completed.
   - This is the happy path you saw with TXN-A in Chapter 5.
-- **Build 1** A Nexus Operation can also leave the happy path four ways.
-- **Build 2** Non-retryable failure (`OperationError`).
+- **Build 1 -** A Nexus Operation can also leave the happy path four ways.
+- **Build 2 -** Non-retryable failure (`OperationError`).
   - The first off-ramp. Permanent business-reason failure.
-- **Build 3** Retryable failure (`HandlerError`, with backoff).
+- **Build 3 -** Retryable failure (`HandlerError`, with backoff).
   - The second off-ramp. Transient infrastructure problem.
-- **Build 4** Cancellation (propagating from the caller through the Endpoint to the handler workflow).
+- **Build 4 -** Cancellation (propagating from the caller through the Endpoint to the handler workflow).
   - The third off-ramp. The caller decides to stop.
-- **Build 5** Circuit breaker (5 retryable errors in a row, breaker opens for 60s).
+- **Build 5 -** Circuit breaker (5 retryable errors in a row, breaker opens for 60s).
   - The fourth off-ramp. The platform stops trying.
-- **Build 6** Each leaves a distinct trace in the caller's Event History or `temporal workflow describe`.
+- **Build 6 -** Each leaves a distinct trace in the caller's Event History or `temporal workflow describe`.
   - Production reflex: when something is wrong, you should know which of the four modes you're looking at.
 
 ## Teaching notes
@@ -81,14 +81,14 @@ You don't write any plumbing for this. You **choose how long to wait**.
 - When a caller Workflow is canceled, the in-flight Nexus Operation cancels too.
   - Cancellation crosses the namespace boundary automatically.
   - This is one of the things Nexus gives you that ad-hoc HTTP integration doesn't.
-- **Build 1** The platform sends cancellation through the Endpoint.
+- **Build 1 -** The platform sends cancellation through the Endpoint.
   - Same path as the original call, in reverse direction. The Endpoint is the only routing surface.
-- **Build 2** The handler workflow receives `CancelledError` at its next `await`.
+- **Build 2 -** The handler workflow receives `CancelledError` at its next `await`.
   - Standard Workflow cancellation. The handler workflow can catch it, do cleanup, then re-raise.
-- **Build 3** Both sides end in the **Canceled** state.
+- **Build 3 -** Both sides end in the **Canceled** state.
   - Caller: Canceled. Handler workflow: Canceled. Symmetric.
   - In the exercise: caller workflow `payment-ch07-TXN-CANCEL-1` and handler workflow `compliance-ch07-TXN-CANCEL-1` both Canceled.
-- **Build 4** You don't write any plumbing for this. You **choose how long to wait**.
+- **Build 4 -** You don't write any plumbing for this. You **choose how long to wait**.
   - The platform handles the wire-level propagation.
   - What you control is the **cancellation type**: do we wait for acknowledgement? Or move on?
 -->
@@ -134,14 +134,14 @@ Default is `WAIT_COMPLETED`. Strictest, slowest, safest.
   - The handler has registered the cancellation request. Cleanup may still be running.
 - `WAIT_COMPLETED`: caller waits until the handler **finishes** (canceled or done).
   - Strictest, slowest, safest. Use when shutdown order matters (e.g., before retrying).
-- **Build 1** Default is `WAIT_COMPLETED`. The strictest, the slowest, the safest.
+- **Build 1 -** Default is `WAIT_COMPLETED`. The strictest, the slowest, the safest.
   - Default exists because most callers want correctness over speed.
   - Override the default explicitly when you know the trade-off.
-- **Build 2** Decision flowchart: do you need a result, just delivery, handler ack, or handler completion?
+- **Build 2 -** Decision flowchart: do you need a result, just delivery, handler ack, or handler completion?
   - Walk the four branches in order. Each one drops one level of strictness.
-- **Build 3** Sync Nexus Operations cannot be cancelled. They hold no operation token. Only async, workflow-backed handlers support cancellation.
+- **Build 3 -** Sync Nexus Operations cannot be cancelled. They hold no operation token. Only async, workflow-backed handlers support cancellation.
   - Cancellation rides on the operation token. No token, no cancellation surface.
-- **Build 4** Wire-format aside: at the proto layer, `WAIT_REQUESTED` is named `WAIT_CANCELLATION_REQUESTED`.
+- **Build 4 -** Wire-format aside: at the proto layer, `WAIT_REQUESTED` is named `WAIT_CANCELLATION_REQUESTED`.
   - Replay output and raw event payloads use the longer form. Your code uses the shorter SDK-side name.
 
 ## Teaching notes
@@ -186,19 +186,19 @@ Same model as Activity errors. `OperationError` ≈ `ApplicationError(non_retrya
 
 <!--
 - The error model maps to the Activity error model. Non-retryable + retryable.
-- **Build 1 (whole code)** Both error types side by side.
-- **Build 2 (lines 1-3, OperationError)** `raise nexusrpc.OperationError("blocked by sanctions list")`
+- **Build 1 (whole code) -** Both error types side by side.
+- **Build 2 (lines 1-3, OperationError) -** `raise nexusrpc.OperationError("blocked by sanctions list")`
   - **Permanent** failure. No retry. Fails the Operation immediately.
   - Use for business-reason failures. "This payment is blocked by sanctions and will never succeed."
   - Analogue of Activity's `ApplicationError(non_retryable=True)`.
-- **Build 3 (lines 5-7, HandlerError)** `raise nexusrpc.HandlerError("downstream KYC API timed out")`
+- **Build 3 (lines 5-7, HandlerError) -** `raise nexusrpc.HandlerError("downstream KYC API timed out")`
   - **Transient** failure. Retries with exponential backoff.
   - Use for infrastructure problems. "The downstream API is timing out, but it usually works."
   - Analogue of Activity's regular exceptions, which retry by default.
-- **Build 4 (whole code)**
-- **Build 5** **OperationError**: caller sees `NexusOperationFailed` immediately. Workflow ends in `Failed`.
-- **Build 6** HandlerError: caller sees `Pending Nexus Operations` with growing attempt count, `BackingOff` state.
-- **Build 7** Activity-error analogy. The room already knows the Activity error model. Bridge the analogy explicitly.
+- **Build 4 (whole code) -**
+- **Build 5 -** **OperationError**: caller sees `NexusOperationFailed` immediately. Workflow ends in `Failed`.
+- **Build 6 -** HandlerError: caller sees `Pending Nexus Operations` with growing attempt count, `BackingOff` state.
+- **Build 7 -** Activity-error analogy. The room already knows the Activity error model. Bridge the analogy explicitly.
 - The HandlerError type taxonomy (BAD_REQUEST etc.) and the "raise INTERNAL for BAD_REQUEST" production warning live on the next slide ("HandlerError Types") since the table doesn't fit here.
 
 ## Teaching notes
@@ -235,28 +235,28 @@ Picking the right type is API design. **Raise `INTERNAL` for what is actually `B
 
 <!--
 - The error model maps to the Activity error model. Non-retryable + retryable.
-- **Build 1 (whole code)** Both error types side by side.
-- **Build 2 (lines 1-3, OperationError)** `raise nexusrpc.OperationError("transaction blocked by sanctions list")`
+- **Build 1 (whole code) -** Both error types side by side.
+- **Build 2 (lines 1-3, OperationError) -** `raise nexusrpc.OperationError("transaction blocked by sanctions list")`
   - **Permanent** failure. No retry. Fails the Operation immediately.
   - Use for business-reason failures. "This payment is blocked by sanctions and will never succeed."
   - Analogue of Activity's `ApplicationError(non_retryable=True)`.
-- **Build 3 (lines 5-7, HandlerError)** `raise nexusrpc.HandlerError("downstream KYC API timed out")`
+- **Build 3 (lines 5-7, HandlerError) -** `raise nexusrpc.HandlerError("downstream KYC API timed out")`
   - **Transient** failure. Retries with exponential backoff.
   - Use for infrastructure problems. "The downstream API is timing out, but it usually works."
   - Analogue of Activity's regular exceptions, which retry by default.
-- **Build 4 (whole code)**
-- **Build 5** **OperationError**: caller sees `NexusOperationFailed` immediately. Workflow ends in `Failed`.
+- **Build 4 (whole code) -**
+- **Build 5 -** **OperationError**: caller sees `NexusOperationFailed` immediately. Workflow ends in `Failed`.
   - Single event in the caller's history: `NexusOperationFailed`. No retry attempts.
   - The caller workflow `Failed` state shows up in the Web UI.
-- **Build 6** HandlerError: caller sees `Pending Nexus Operations` with growing attempt count, `BackingOff` state.
+- **Build 6 -** HandlerError: caller sees `Pending Nexus Operations` with growing attempt count, `BackingOff` state.
   - The Operation goes into `BackingOff` between retries.
   - `temporal workflow describe -w <caller-id>` shows attempt count climbing: 1, 2, 3, ...
   - Same exponential backoff pattern as Activity retries.
-- **Build 7** Activity-error analogy. `OperationError` is `ApplicationError(non_retryable=True)`. `HandlerError` is the regular Activity exception that retries by default.
+- **Build 7 -** Activity-error analogy. `OperationError` is `ApplicationError(non_retryable=True)`. `HandlerError` is the regular Activity exception that retries by default.
   - The room already knows the Activity error model. Bridge the analogy explicitly so they don't have to learn a second one.
-- **Build 8** `HandlerError` carries a type. Retryability follows the type.
+- **Build 8 -** `HandlerError` carries a type. Retryability follows the type.
   - Walk the table: `BAD_REQUEST`, `UNAUTHENTICATED`, `UNAUTHORIZED`, `NOT_FOUND`, `NOT_IMPLEMENTED` are non-retryable; `RESOURCE_EXHAUSTED`, `INTERNAL`, `UNAVAILABLE`, `UPSTREAM_TIMEOUT` retry.
-- **Build 9** Picking the right type is API design. Raise `INTERNAL` for what is actually `BAD_REQUEST` and callers retry forever on something that will never succeed.
+- **Build 9 -** Picking the right type is API design. Raise `INTERNAL` for what is actually `BAD_REQUEST` and callers retry forever on something that will never succeed.
   - The most expensive error-handling bug is "we miscategorized a permanent failure as transient". Pick the type with intent.
 
 ## Teaching notes
@@ -291,14 +291,14 @@ When the breaker opens, here's what it looks like in production.
 
 <!--
 - The mechanism (5 errors on a pair, 60s open, half-open probe) was the dedicated Ch3 slide. Here we look at what a trip surfaces as in operations.
-- **Build 1** The diagnostic surface.
+- **Build 1 -** The diagnostic surface.
   - `temporal workflow describe -w <caller-id>` is where this lands. `Pending Nexus Operations` shows the row, `State: Blocked` is the giveaway, `BlockedReason: The circuit breaker is open.` is the explicit string to grep for.
   - This is one of those features you discover during an incident. Recognizing the message saves debugging time.
-- **Build 2** Recovery is passive.
+- **Build 2 -** Recovery is passive.
   - You don't reset the breaker. The platform half-opens after 60 seconds and probes.
   - Probe success: closed, normal traffic resumes. Probe failure: another 60s open.
   - Fix the underlying problem and the breaker takes care of itself.
-- **Build 3** Most trips in the wild are handler Workers not running.
+- **Build 3 -** Most trips in the wild are handler Workers not running.
   - Worker pool scaled to zero, deploy failed, pod crashed. Five timed-out requests in a row and the breaker opens.
   - This reflex is the same one we landed in Ch3. Reiterating here because it's the production-reflex line worth landing twice.
 
@@ -380,9 +380,9 @@ layout: default
 </v-clicks>
 
 <!--
-- **Build 1** Cancellation crosses the Nexus boundary automatically. The choice you make is how long to wait.
-- **Build 2** The four cancellation types are `ABANDON`, `TRY_CANCEL`, `WAIT_REQUESTED`, and `WAIT_COMPLETED`. The default is `WAIT_COMPLETED`.
-- **Build 3** Synchronous Nexus Operations cannot be cancelled. Only async, workflow-backed handlers support cancellation.
-- **Build 4** `nexusrpc.OperationError` is permanent and never retries. `nexusrpc.HandlerError` is transient and retries with backoff.
-- **Build 5** The circuit breaker opens after 5 consecutive retryable errors on the same caller-Namespace and Endpoint pair, stays open for 60 seconds, then half-opens.
+- **Build 1 -** Cancellation crosses the Nexus boundary automatically. The choice you make is how long to wait.
+- **Build 2 -** The four cancellation types are `ABANDON`, `TRY_CANCEL`, `WAIT_REQUESTED`, and `WAIT_COMPLETED`. The default is `WAIT_COMPLETED`.
+- **Build 3 -** Synchronous Nexus Operations cannot be cancelled. Only async, workflow-backed handlers support cancellation.
+- **Build 4 -** `nexusrpc.OperationError` is permanent and never retries. `nexusrpc.HandlerError` is transient and retries with backoff.
+- **Build 5 -** The circuit breaker opens after 5 consecutive retryable errors on the same caller-Namespace and Endpoint pair, stays open for 60 seconds, then half-opens.
 -->

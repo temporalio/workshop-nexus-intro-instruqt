@@ -35,11 +35,11 @@ flowchart LR
 - The diagram is intentionally simple. validate → compliance → execute. That's the whole app.
   - Activities are owned by different teams in real life, even though they're called from one Workflow.
   - Who are the actors in our story here?
-- **Build 1** **Payments team** owns `validate_payment` and `execute_payment`
+- **Build 1 -** **Payments team** owns `validate_payment` and `execute_payment`
   - These are the bookends. They check the request and they move the money.
-- **Build 2** **Compliance team** owns `check_compliance`
+- **Build 2 -** **Compliance team** owns `check_compliance`
   - Risk rules. Sanctions screening. KYC. The kind of code that gets scrutinized in audits.
-- **Build 3** **The Problem** One Worker. One namespace. One deployment.
+- **Build 3 -** **The Problem** One Worker. One namespace. One deployment.
   - This is the architectural fact that creates all the pain we're about to enumerate.
   - Blast radius is effectively zero
   - The code is correct. The Workflows run, it's the structure and deployment model that is complex.
@@ -74,10 +74,10 @@ Compliance must pass before Payments executes. **No payment goes out unchecked.*
 <!--
 - Business framing before the chapter's pain enumeration. The structural picture from the previous slide gave the room the topology; this slide gives the stakes.
 - "Before we look at what goes wrong, here's what each team is actually trying to do."
-- **Build 1** **Payments**: processes payment transactions end-to-end.
+- **Build 1 -** **Payments**: processes payment transactions end-to-end.
   - Three steps: validate, check compliance, execute. Validate and execute are theirs; the middle step is Compliance's.
   - SLA framing: Payments owns the customer-facing uptime guarantee. When Compliance is co-tenant, Compliance gets dragged into Payments' SLA whether or not their own product team signed up for it.
-- **Build 2** **Compliance**: assesses regulatory risk on every transaction.
+- **Build 2 -** **Compliance**: assesses regulatory risk on every transaction.
   - Sanctions screening: matching against OFAC and similar lists.
   - KYC: identity verification, customer-history checks.
   - Threshold rules: dollar amounts, jurisdictions, transaction types that flag for review.
@@ -85,7 +85,7 @@ Compliance must pass before Payments executes. **No payment goes out unchecked.*
     - LOW: auto-approve. The bulk of transactions.
     - MEDIUM: flagged for additional checks. Today the rule check approves with an AML monitoring note attached; the bucket exists so we can act on it differently when the workshop's logic catches up.
     - HIGH: auto-decline. Sanctions hits, threshold breaches.
-- **Build 3** Compliance must pass before Payments executes. **No payment goes out unchecked.**
+- **Build 3 -** Compliance must pass before Payments executes. **No payment goes out unchecked.**
   - Hard dependency. Not optional. Every payment touches Compliance.
   - This dependency is what makes the coupling so painful. Compliance broken means Payments grinds to a halt. Compliance slow means Payments slow. Compliance's blast radius is Payments' blast radius until the seam is cut.
 - Lands the business stakes the room needs to hear before pain enumeration. With "Payments owns the SLA" and "Compliance has audit accountability" loaded, the next slide's "Mixed SLAs" and "Shared blast radius" bullets land harder.
@@ -119,16 +119,16 @@ The code is fine. The **boundary** is wrong.
 </v-click>
 
 <!--
-- **Build 1** **Shared blast radius.** A bug in `check_compliance` takes down `execute_payment`.
+- **Build 1 -** **Shared blast radius.** A bug in `check_compliance` takes down `execute_payment`.
   - The Worker hosts both. A panic in one means a restart for both.
-- **Build 2** **Shared deploys.** Compliance ships every Thursday. Payments ships every hour. Now what?
+- **Build 2 -** **Shared deploys.** Compliance ships every Thursday. Payments ships every hour. Now what?
   - Either Compliance deploys faster than they want, or Payments deploys slower than they want.
   - "Coordinated deploys" sounds harmless until your company has 30 services.
-- **Build 3** **Shared knowledge.** Every Payments engineer needs to read every Compliance change.
+- **Build 3 -** **Shared knowledge.** Every Payments engineer needs to read every Compliance change.
   - PR reviews stretch across teams. Cognitive load grows linearly with team count.
-- **Build 4** **Mixed SLAs.** Payment's has an SLA of 4 9s. Compliance now _also_ has this SLA.
+- **Build 4 -** **Mixed SLAs.** Payment's has an SLA of 4 9s. Compliance now _also_ has this SLA.
   - One slow Activity blocks the entire Workflow. 
-- **Build 5** The code is fine. The **boundary** is wrong.
+- **Build 5 -** The code is fine. The **boundary** is wrong.
   - We are not fixing bugs. We are fixing organizational structure expressed in code.
 
 ## Teaching notes
@@ -172,14 +172,14 @@ We use the visceral monolith because it's easier to see the issue in the Worker 
 
 <!--
 - Today's monolith is the most extreme form of coupling: Compliance code is registered as an Activity on the Payments Worker.
-- **Build 1** More common in real codebases: two teams sharing one namespace, one task queue, sometimes one database, with no contract between them.
+- **Build 1 -** More common in real codebases: two teams sharing one namespace, one task queue, sometimes one database, with no contract between them.
   - "Does anyone here actually have a Workflow that imports another team's activity registration directly?"
   - "Does anyone share a namespace with a team that owns a different domain?" That is the audience for Nexus.
-- **Build 2** Coupled at the import level, the deploy level, or the schema level instead of the activity-registration level.
+- **Build 2 -** Coupled at the import level, the deploy level, or the schema level instead of the activity-registration level.
   - The pain is the same. The mechanism is different.
-- **Build 3** Nexus is the canonical fix for both shapes.
+- **Build 3 -** Nexus is the canonical fix for both shapes.
   - The structural intent (typed contract, separate namespace, separate blast radius) applies regardless of which coupling shape you started from.
-- **Build 4** We use the visceral monolith because the seam is visible in the Worker registration and the Event History.
+- **Build 4 -** We use the visceral monolith because the seam is visible in the Worker registration and the Event History.
   - By the end of the morning they will have built two namespaces, two Workers, one Endpoint. Whichever coupling they have at home, they can map this onto it.
 -->
 
@@ -253,23 +253,23 @@ How do teams typically address this?
 - This slide is a debrief, not a lecture. Each bullet clicks in one at a time so you can pace the reveal against the room.
 - Pattern: ask the question, take 2 to 3 answers, click in the bullets they hit (or didn't). If someone calls one out, click it in to confirm. If the room is quiet, click it in to prime the next answer.
 - Cold start: if no one answers Build 1, lead with "Did anyone notice the Worker banner showed `check_compliance` registered with the parenthetical `(monolith - will decouple)`?"
-- **Build 1** **What did you notice was wrong?**
+- **Build 1 -** **What did you notice was wrong?**
   - Pause. Take 2 to 3 answers from the room before clicking anything in.
-  - **Build 2** Compliance code is registered on the Payments Worker.
+  - **Build 2 -** Compliance code is registered on the Payments Worker.
     - The loudest signal. The Worker banner literally says it.
-  - **Build 3** Same `default` namespace, same `payments-processing` task queue.
+  - **Build 3 -** Same `default` namespace, same `payments-processing` task queue.
     - No isolation. One blast radius. One access policy.
-  - **Build 4** No boundary in the Event History; `check_compliance` looks like any other Activity.
+  - **Build 4 -** No boundary in the Event History; `check_compliance` looks like any other Activity.
     - Compliance has zero visibility into runs of their own logic.
-- **Build 5** **How does this become a problem when Compliance grows into its own team?**
+- **Build 5 -** **How does this become a problem when Compliance grows into its own team?**
   - Forward-projection question. Aim at scaling intuition. Pause again.
-  - **Build 6** Compliance can't ship without coordinating with Payments.
+  - **Build 6 -** Compliance can't ship without coordinating with Payments.
     - Deploy coupling. The most common cross-team gripe.
-  - **Build 7** A bad Compliance deploy crashes the Payments Worker.
+  - **Build 7 -** A bad Compliance deploy crashes the Payments Worker.
     - Blast radius. The higher-SLA team gets dragged down by the lower-SLA team's mistakes.
-  - **Build 8** Same process holds PCI scope and KYC scope.
+  - **Build 8 -** Same process holds PCI scope and KYC scope.
     - Data isolation. Audit and compliance teams care a lot about this.
-- **Build 9** How do teams typically address this?
+- **Build 9 -** How do teams typically address this?
   - Bridge to "What About Patterns We Already Have?" Activity wrapping HTTP, Shared Activity, Child Workflow.
   - These are the obvious-looking fixes. None of them fully work. That's the gap Nexus fills.
 -->
@@ -323,7 +323,7 @@ None of these draw a line between **teams**.
   - Compliance ships their code into the Payments Worker. Same deploy pipeline, same secrets, same crash blast radius. That's not a team boundary; it's the opposite.
 - **Child Workflow** | Decomposing inside one Workflow | Same namespace, same Worker pool
   - Decomposition tool, not a team boundary. Same namespace, same Worker pool, same tenancy unit. Cross-team needs cross-namespace.
-- **Build 1** None of these draw a line between **teams**.
+- **Build 1 -** None of these draw a line between **teams**.
 
 ## Teaching notes
 
@@ -367,21 +367,21 @@ A Nexus call is **a way of invoking a typed Operation behind a contract, with du
   - "Durable delivery" is precise: the Nexus Machinery delivers with at-least-once semantics, retries until schedule-to-close, surfaces the result reliably. The work behind the call may or may not be durable on its own (Workflow start, Signal, Update = durable; Query = not), but the call itself always is.
   - Verbal scope, don't put on slide: in the workshop's case the work belongs to another team in another namespace. More broadly, Nexus works across namespaces, regions, and clouds, or within a single namespace for contract discipline. Not just an org-chart fix.
   - Future roadmap, don't say on stage unless asked: today the caller must be a Workflow. Non-Workflow callers (bash, service, app) are on the Temporal Nexus roadmap per the GA announcement and Public Preview blog. The slide says "a way of invoking" rather than "a Workflow invoking" intentionally so it stays accurate when that ships.
-- **Build 1** The unit you ship is a Service.
+- **Build 1 -** The unit you ship is a Service.
   - The Service is the code artifact. Both teams import it.
-- **Build 2** The unit the operator registers is an Endpoint.
+- **Build 2 -** The unit the operator registers is an Endpoint.
   - The Endpoint is the server-side artifact. Created with a CLI command, not in code.
-- **Build 3** The unit a caller invokes is an Operation. The team that implements it is the implementer.
+- **Build 3 -** The unit a caller invokes is an Operation. The team that implements it is the implementer.
   - The Operation is the call site. One Operation = one cross-team call.
   - Caller, not Workflow, on purpose: the connector roadmap brings non-Workflow callers later.
-- **Build 4** The pattern this enables is Workflow-as-a-Service.
+- **Build 4 -** The pattern this enables is Workflow-as-a-Service.
   - Vocabulary anchor for production conversations. A team builds reusable durable workflows and exposes them through a typed Nexus contract; consumers depend on the contract, not the implementation. One of four canonical Nexus patterns alongside Cross-Namespace Service Mesh, Router Worker, and Self-Service Portal.
   - The room will read posts and case studies after this workshop. They'll see "Workflow-as-a-Service" in writing. Naming it here gives them the hook.
-- **Build 5** The same Service contract works in any Temporal SDK. Cross-language by design.
+- **Build 5 -** The same Service contract works in any Temporal SDK. Cross-language by design.
   - Python implementer, Java caller, Go caller, .NET caller. Same wire format, same Operation names, same Service shape across every SDK.
-- **Build 6** Generally Available. Battle-tested in production today.
+- **Build 6 -** Generally Available. Battle-tested in production today.
   - Anecdotal color for delivery if the room asks "who's running this?": Netflix runs an internal control plane on Nexus (MetaPlane) for federated team-owned infrastructure resources; Miro uses Nexus for cross-region data migration where regions have no direct network connectivity; Duolingo runs a self-service portal where Cloud Ops exposes workflows that engineering teams trigger via Nexus Endpoints (the same shape this workshop is about to build). Mention any of these only if asked; skip if pacing is tight.
-- **Build 7** **The contract is the integration.**
+- **Build 7 -** **The contract is the integration.**
   - **Key point:** plant the thesis here. It returns at Ch 2's "Why Types Matter Here" close, and again at the wrap.
   - Say it once, slowly, then advance.
 -->
@@ -431,15 +431,18 @@ This workshop splits them:
 <!--
 - This slide names the vocabulary issue so the room can stop second-guessing it.
 - "If you've read the Nexus docs and felt like the word 'handler' was doing too much, you're not crazy. It's used for three different things."
-- The three referents:
-  - **Side**: "handler side" in the docs. A team, a namespace, the organizational unit that owns the handler code.
-  - **Code**: the function or class decorated with `@sync_operation` or `@workflow_run_operation`. The thing you write in your editor.
-  - **Worker**: the process polling the Task Queue and dispatching Nexus Tasks.
-- Developer intuition reads "handler" as a code object. That reading is fine for the code referent. The slide just makes the side and the Worker distinct so each sentence reads cleanly.
-- Workshop convention from this slide forward:
-  - "handler" = the code only.
-  - "implementer" = the side, the team, the role.
-  - "Worker" stays "Worker." Already its own concept.
+- **Build 1 -** A **piece of code**: `@sync_operation`, `OperationHandler.sync`.
+  - The function or class decorated with `@sync_operation` or `@workflow_run_operation`. The thing you write in your editor.
+- **Build 2 -** A **side**: a team or a namespace ("handler side" in the docs).
+  - The organizational unit that owns the handler code.
+- **Build 3 -** A **Worker process**: the one polling the Task Queue.
+  - The process polling the Task Queue and dispatching Nexus Tasks.
+- **Build 4 -** Three meanings, one word. Each sentence asks you to figure out which one is meant.
+  - Developer intuition reads "handler" as a code object. That reading is fine for the code referent. The slide just makes the side and the Worker distinct so each sentence reads cleanly.
+- **Build 5 -** This workshop splits them.
+- **Build 6 -** **handler** = the code only.
+- **Build 7 -** **implementer** = the side, the team, the role.
+- **Build 8 -** **Worker** stays "Worker." Already its own concept.
   - "caller" stays "caller." The docs only use that word one way.
 - "When you read real Nexus docs and Slack threads after this workshop, mentally substitute 'implementer' wherever the docs say 'handler' for the role. After a week you won't notice you're doing it."
 -->
@@ -473,19 +476,19 @@ Service + Operation are **code-level**. Endpoint + Registry are **operator-level
 
 <!--
 - Four primitives. Two are code-level, two are operator-level. That split is the closing beat.
-- **Build 1** **Service**: typed contract between teams.
+- **Build 1 -** **Service**: typed contract between teams.
   - One Python file. Both teams import it. No IDL.
   - Like a gRPC `service` definition, expressed in your SDK's native types.
-- **Build 2** **Operation**: one typed method on the Service.
+- **Build 2 -** **Operation**: one typed method on the Service.
   - One Operation = one cross-team call.
   - We'll define two on our Service: `check_compliance` and `submit_review`.
-- **Build 3** **Endpoint**: routing target, namespace + task queue.
+- **Build 3 -** **Endpoint**: routing target, namespace + task queue.
   - Reverse proxy. The caller names the Endpoint, never the namespace.
   - Created with `temporal operator nexus endpoint create`. Lives outside your code.
-- **Build 4** **Registry**: index of which Endpoints exist where.
+- **Build 4 -** **Registry**: index of which Endpoints exist where.
   - You manage Endpoints in the Registry via CLI / UI / Terraform. You don't write code against it.
   - Like DNS. It's just there, doing its job.
-- **Build 5** **Service + Operation are code-level. Endpoint + Registry are operator-level.**
+- **Build 5 -** **Service + Operation are code-level. Endpoint + Registry are operator-level.**
   - The split that matters: developers write Service + Operation, operators wire Endpoint + Registry.
   - Two artifacts, two owners. That's the team-boundary discipline Nexus enforces.
 - Service, Operation, Endpoint, Registry: the vocabulary the rest of the workshop runs on.
@@ -558,18 +561,18 @@ Nexus has two constraints that affect design choices.
 
 <!--
 - Nexus has two constraints worth memorizing. Two numbers.
-- **Build 1** 10 seconds per attempt, depending on handler type.
+- **Build 1 -** 10 seconds per attempt, depending on handler type.
   - Per-request deadline, measured by the caller's Nexus Machinery against a single start (or cancel) request.
   - NOT an end-to-end cap on the operation. Misses are retried with exponential backoff up to `schedule_to_close_timeout`.
   - Sync handler: the result must return inside the window. Async handler: only the workflow start has to fit (`start_workflow` returns in milliseconds).
   - Available time is often less than 10s. The request goes through matching first, eating into the budget.
-- **Build 2** Async ceiling: 60 days on Temporal Cloud.
+- **Build 2 -** Async ceiling: 60 days on Temporal Cloud.
   - This is the maximum `schedule_to_close_timeout` Temporal Cloud will accept for a Nexus Operation.
   - Self-hosted's maximum is governed by the `component.nexusoperations.limit.scheduleToCloseTimeout` dynamic config and can exceed 60 days; Temporal Cloud locks the cap at 60 days.
   - 60 days handles human-in-the-loop scenarios, slow compliance reviews, asynchronous batch jobs, etc.
-- **Build 3** Decision rule: under five seconds with margin, sync. Anything else, async.
+- **Build 3 -** Decision rule: under five seconds with margin, sync. Anything else, async.
   - Memorize these two numbers. They show up everywhere.
-- **Build 4** Sync also requires the work to be reliable and not rate-limited. Five consecutive retryable errors on a (caller-Namespace, Endpoint) pair open the circuit breaker for 60 seconds.
+- **Build 4 -** Sync also requires the work to be reliable and not rate-limited. Five consecutive retryable errors on a (caller-Namespace, Endpoint) pair open the circuit breaker for 60 seconds.
   - Reliability and rate limits are as load-bearing as the time budget.
   - "Reliable" means Temporal, Kafka, durable infra you operate. Not arbitrary third-party HTTP.
   - Five users hitting the same flaky endpoint at the same time can trip the breaker in seconds. The scope is per (caller-Namespace, Endpoint) pair, not per user, not per Operation.
@@ -647,18 +650,18 @@ layout: default
 </v-clicks>
 
 <!--
-- **Build 1** Cross-team Temporal integration creates shared blast radius, deploys, knowledge, and SLAs.
+- **Build 1 -** Cross-team Temporal integration creates shared blast radius, deploys, knowledge, and SLAs.
   - The four pains we opened with. The boundary, not the code, is the problem.
-- **Build 2** Nexus is the canonical fix for cross-namespace and intra-namespace coupling.
+- **Build 2 -** Nexus is the canonical fix for cross-namespace and intra-namespace coupling.
   - Not just an org-chart fix. Works for isolation, blast radius, and security boundaries too.
-- **Build 3** A Nexus call is invoking a typed Operation behind a contract, with durable delivery. Think durable RPC.
+- **Build 3 -** A Nexus call is invoking a typed Operation behind a contract, with durable delivery. Think durable RPC.
   - The chapter's thesis. "Durable RPC" is the mental model worth taking home.
-- **Build 4** The four building blocks: Service, Operation, Endpoint, Registry. Service and Operation are code-level; Endpoint and Registry are operator-level.
+- **Build 4 -** The four building blocks: Service, Operation, Endpoint, Registry. Service and Operation are code-level; Endpoint and Registry are operator-level.
   - Service + Operation = developers. Endpoint + Registry = operators. Two artifacts, two owners.
-- **Build 5** Every Operation is synchronous or asynchronous.
+- **Build 5 -** Every Operation is synchronous or asynchronous.
   - The binary the rest of the workshop pivots on. Per-Operation choice by the implementer.
-- **Build 6** The 10-second per-attempt deadline applies to both. For sync the full result must return inside it; for async only the Workflow start has to fit.
+- **Build 6 -** The 10-second per-attempt deadline applies to both. For sync the full result must return inside it; for async only the Workflow start has to fit.
   - Common misread: that 10s only applies to sync. It applies to both; what fits in the window differs.
-- **Build 7** Schedule-to-Close caps the overall Operation, 60 days max on Temporal Cloud.
+- **Build 7 -** Schedule-to-Close caps the overall Operation, 60 days max on Temporal Cloud.
   - Practically only matters for async. For sync, you'd never set schedule-to-close anywhere near 60 days.
 -->
