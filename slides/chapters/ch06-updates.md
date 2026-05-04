@@ -90,6 +90,11 @@ Generally Available. The combination "Updates + Nexus" is what this chapter is a
 - **Build 4** Exactly the right primitive for "human submits a decision, workflow uses it to continue."
 - **Build 5** Generally Available. The combination "Updates + Nexus" is what this chapter is about.
   - Updates and Nexus were designed alongside each other; the combination is the canonical "tell-a-running-workflow-X" pattern.
+  - Worth saying aloud here: today, Nexus Updates are sync-only, bound by the same 10-second per-request ceiling as any sync Nexus handler. That is the shape this chapter teaches. The Nexus team is working on async Nexus Updates with their own callback semantics for arbitrary duration; not GA yet, mention only as the future direction.
+
+## Teaching notes
+
+- Phil Prasek's add (PR review, 2026-05): the on-slide title's "60 Seconds" is a pacing meta-phrase, not a technical claim about Update duration. Phil read it as a duration assertion; the verbal callout under Build 5 disambiguates by anchoring the actual 10s ceiling and the sync-only-today reality. Keeps the title cadence intact while landing the technical truth.
 -->
 
 ---

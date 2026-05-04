@@ -67,7 +67,7 @@ Sync handlers are bound by a hard 10-second per-request deadline. Use them for *
 
 <v-click>
 
-**Avoid for arbitrary external HTTP.** Rate limits, timeouts, and 5xx trip the circuit breaker fast.
+**For arbitrary external HTTP, back with a Workflow or Standalone Activity.** Rate limits, timeouts, and 5xx trip the Nexus circuit breaker fast.
 
 </v-click>
 
@@ -89,10 +89,10 @@ In our workshop, `check_compliance` runs a deterministic in-process rule check. 
   - Bounded by 10s, but in practice should be well under five seconds with margin.
 - **Build 3** Reliable downstream Temporal infrastructure.
   - Temporal Cloud APIs, Kafka producers, durable persistence layers your team already operates. The word "reliable" is doing the work in this bullet.
-- **Build 4** Avoid for arbitrary external HTTP.
-  - Five consecutive retryable errors on a (caller-Namespace, Endpoint) pair open the circuit breaker for 60 seconds. Timeouts, rate limits, 5xx all count as retryable.
+- **Build 4** For arbitrary external HTTP, back with a Workflow or Standalone Activity.
+  - Five consecutive retryable errors on a (caller-Namespace, Endpoint) pair open the Nexus circuit breaker for 60 seconds. Timeouts, rate limits, 5xx all count as retryable.
   - Five users hitting the same flaky third-party API at once will trip it in seconds.
-  - Standalone activities (GA-imminent on Temporal Cloud) are the right tool for unreliable HTTP. Same Service contract surface area is on the roadmap.
+  - The fix is to hand off to a durable backing primitive: forward to a Workflow, or use a Standalone Activity (GA-imminent on Temporal Cloud). Same Service contract surface area is on the roadmap.
 - **Build 5** In our workshop, `check_compliance` runs a deterministic in-process rule check. That is the reliable case.
   - Bringing it back to the actual workshop code. The compliance check is basic math against the request, no external call. That is why sync is safe here.
 
@@ -313,12 +313,14 @@ The breaker can't tell the difference between "your handler has a bug" and "your
 - **Build 5** The breaker can't tell the difference between "your handler has a bug" and "your handler isn't there."
   - Same five-timeouts-then-open behavior either way. The fix is operational, not code.
   - Production reflex: when a circuit breaker trips, check the Worker fleet first. Code changes second.
+  - Footnote, only if a sharp learner asks: the breaker counts retryable errors. A handler that catches every exception and returns a non-retryable error will not trip the breaker even when it is busted. That sounds like a feature; it is actually how you mask a buggy handler. Pick error types deliberately.
 
 ## Teaching notes
 
 - This slide expands the "most trips are Workers not running" reflex that used to close the Circuit Breaker mechanism slide. Lives here per Mason's request: it's important enough to talk about separately, and it sets up "The 10-Second Deadline" + "Where the 10 Seconds Goes" which dig into the timeout-budget mechanics behind the same failure mode.
 - Source: `docs.temporal.io/nexus/operations#circuit-breaking` ("If no workers are polling the handler task queue... Nexus requests will time out.").
 - Pacing target: ~45 seconds. Walk the four operational causes, then land Build 5 as the production reflex.
+- Phil Prasek's add (PR review, 2026-05): the breaker only counts retryable errors. A handler that traps every exception and returns a non-retryable error stays out of breaker territory even with bugs. Use the "if asked" footnote under Build 5; do not introduce unprompted because it confuses the slide's main thesis ("watch your Worker fleet").
 -->
 
 ---
@@ -503,7 +505,7 @@ layout: default
 
 # What Is a Nexus Endpoint?
 
-A **routing rule** in the Temporal server's Nexus Registry. It is not code.
+A **reverse proxy** with a routing entry in the Nexus Registry. It is not code.
 
 <v-clicks>
 
@@ -528,7 +530,7 @@ Mental model: a **DNS entry**. Caller names `compliance-endpoint`; the platform 
 </v-click>
 
 <!--
-- A routing rule in the Temporal server's Nexus Registry. Server-side artifact. Not code. Not committed to git. Created with a CLI command. Lives in the Registry until you delete it.
+- A reverse proxy with a routing entry in the Nexus Registry. Server-side artifact. Not code. Not committed to git. Created with a CLI command. Lives in the Registry until you delete it.
 - **Build 1** Carries a name, a target Namespace, a target Task Queue, and a Markdown description.
   - Four fields. The name is the public identifier. The Namespace + Task Queue is the routing target. The description renders as Markdown in the Web UI.
 - **Build 2** Created by the operator. Lives at the cluster level on self-hosted; at the Account level on Temporal Cloud.
@@ -559,7 +561,7 @@ layout: default
 
 # Creating the Endpoint
 
-The Endpoint is a routing entry. Operator-side, not code-side.
+The Endpoint is a reverse proxy with a routing entry. Operator-side, not code-side.
 
 <br>
 
@@ -582,7 +584,7 @@ temporal operator nexus endpoint create \
 </v-clicks>
 
 <!--
-- The Endpoint is a routing entry. Operator-side, not code-side.
+- The Endpoint is a reverse proxy with a routing entry. Operator-side, not code-side.
   - "Operator" = whoever runs `temporal` CLI commands. Could be a platform team, could be the developer.
   - The Endpoint is created once and shared by all callers. Not per-deployment.
 - The CLI command line by line:

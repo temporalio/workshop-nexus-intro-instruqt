@@ -101,7 +101,7 @@ A Nexus **Service** is that contract, expressed in your SDK's native types.
   - Same advice you'd give for any cross-team API.
 - **Build 4** A Nexus Service is that contract, expressed in your SDK's native types.
   - No code generation step. Just Python (or Java, or Go).
-  - The same wire format works across SDKs because they all serialize their native types to the same JSON.
+  - "Native types" does not mean "single language." The wire format is JSON, you can also use proto defs, and Nexus rides the same data converters as the rest of Temporal. Polyglot is first-class — the Python contract on this slide can be implemented by a Java handler tomorrow without a Python change.
 -->
 
 ---

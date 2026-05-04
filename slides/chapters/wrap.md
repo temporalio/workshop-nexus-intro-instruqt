@@ -34,7 +34,7 @@ The shape of the integration:
 
 - Cross-team Temporal integration needs cross-team Nexus Endpoints. **Namespaces become tenancy boundaries with real teeth.**
 - A Nexus **Service** is a typed Python class both teams import. **Operations** are the typed methods on it.
-- An **Endpoint** is a routing entry the operator creates with the Temporal CLI. Caller code names only the Endpoint.
+- An **Endpoint** is a reverse proxy with a routing entry the operator creates with the Temporal CLI. Caller code names only the Endpoint.
 - Service and Operation are **code-level**. Endpoint and Registry are **operator-level**.
 
 </v-clicks>
@@ -44,7 +44,7 @@ The shape of the integration:
   - Namespaces are not "groupings" anymore; they are tenancy units.
 - **Build 2** A Nexus Service is a typed Python class both teams import. Operations are the typed methods on it.
   - The contract is the integration.
-- **Build 3** An Endpoint is a routing entry the operator creates with the Temporal CLI. Caller code names only the Endpoint.
+- **Build 3** An Endpoint is a reverse proxy with a routing entry the operator creates with the Temporal CLI. Caller code names only the Endpoint.
   - DNS-entry mental model. The operator-side artifact.
 - **Build 4** Service and Operation are code-level. Endpoint and Registry are operator-level.
   - Two halves of the responsibility.
@@ -61,18 +61,25 @@ The two handler shapes:
 <v-clicks>
 
 - **Synchronous handlers** run inline on the handler Worker, return a result directly, and must respond within a **10-second** per-request deadline.
-- **Asynchronous handlers** return a `WorkflowHandle` to a workflow that produces the result. Up to **60 days** on Temporal Cloud.
+- **Asynchronous handlers** return a handle to obtain the result, cancel, and otherwise manage the async Operation. Up to **60 days** on Temporal Cloud.
 - Choose sync when the work fits comfortably under five seconds. Choose async for everything else, especially anything that needs cancellation.
-- Set all three timeouts (`schedule_to_close`, `schedule_to_start`, `start_to_close`) on every async caller. Use `WorkflowIDConflictPolicy.USE_EXISTING` for idempotent retries.
+- Set `schedule_to_close_timeout` on every async caller. `schedule_to_start` and `start_to_close` are situational. Use `WorkflowIDConflictPolicy.USE_EXISTING` for idempotent retries.
 
 </v-clicks>
 
 <!--
 - **Build 1** Synchronous handlers run inline on the handler Worker, return a result directly, and must respond within a 10-second per-request deadline.
-- **Build 2** Asynchronous handlers return a WorkflowHandle to a workflow that produces the result. Up to 60 days on Temporal Cloud.
+- **Build 2** Asynchronous handlers return a handle to obtain the result, cancel, and otherwise manage the async Operation. Up to 60 days on Temporal Cloud.
+  - Today the handle is a `WorkflowHandle`. Code-level details live on the ch04 / ch05 slides; the wrap stays generic.
 - **Build 3** Choose sync when the work fits comfortably under five seconds. Choose async for everything else, especially anything that needs cancellation.
-- **Build 4** Set all three timeouts on every async caller. Use `WorkflowIDConflictPolicy.USE_EXISTING` for idempotent retries.
+- **Build 4** Set `schedule_to_close_timeout` on every async caller. `schedule_to_start` and `start_to_close` are situational. Use `WorkflowIDConflictPolicy.USE_EXISTING` for idempotent retries.
+  - `schedule_to_close` bounds total time end-to-end. That is the one Temporal guidance recommends in nearly all cases.
+  - `schedule_to_start` and `start_to_close` are situational: add them when you have a specific reason — a known queue-pickup ceiling, or a per-attempt cap distinct from total time. Don't default to setting them.
   - The two production gotchas of async.
+
+## Teaching notes
+
+- Wrap-slide wording is intentionally generic ("a handle" rather than `WorkflowHandle`) because more async handler shapes are on the Nexus roadmap (async Updates, manually-completed async ops). Keeping the essential-points language abstract lets the deck age past the next handler-type addition without rewording. Code-level slides in ch04 and ch05 keep the concrete `WorkflowHandle` framing because that is the shape the room is actually building today.
 -->
 
 ---
@@ -274,7 +281,8 @@ Today's Workflow-to-Workflow case is one application of a broader durable-RPC st
 - **Build 4** Per-caller rate limiting and fine-grained authorization.
   - Operator-side. Matters when a Nexus Endpoint is shared by many internal teams.
 - **Build 5** Enhanced routing rules.
-  - Today: one Endpoint maps to one (Namespace, Task Queue). Future: more flexible routing.
+  - Today an Endpoint carries a single routing rule: one (target Namespace, target Task Queue) pair. Future: multiple routing rules per Endpoint, which unlocks traffic-split, canary, and per-caller routing patterns without standing up a new Endpoint.
+  - This is Phil Prasek's framing from the PR review: "Single routing rule today" is the precise way to describe the current state, and it lands cleaner than "one (Namespace, Task Queue)" once the multi-rule capability ships.
 - **Build 6** Today's Workflow-to-Workflow case is one application of a broader durable-RPC story. The platform is leaning in.
   - The "durable RPC" framing from Ch 1 generalizes here. The connector layer eliminates the Workflow-only-caller asterisk.
 

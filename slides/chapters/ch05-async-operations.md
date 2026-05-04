@@ -263,7 +263,7 @@ The async lifecycle adds one event in the middle.
 layout: default
 ---
 
-# Three Timeouts You'll Actually Set
+# Three Timeouts You May Set
 
 ```python {all|3|4|5|all}
 await nexus_client.execute_operation(
