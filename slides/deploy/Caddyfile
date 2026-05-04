@@ -59,6 +59,18 @@ nexus.example.com {
         reverse_proxy localhost:3030
     }
 
+    # Slidev / Vite internal endpoints (e.g. /@server-reactive/*) are
+    # emitted at the root path even when Slidev runs with --base /slides/.
+    # The dev server only answers them under the prefix, so rewrite the
+    # path before proxying. Without this rewrite the presenter view
+    # mounts but speaker notes never load because /@server-reactive/nav
+    # falls through to the landing page handler instead of reaching the
+    # dev server.
+    handle /@* {
+        rewrite * /slides{uri}
+        reverse_proxy localhost:3030
+    }
+
     # Landing page at /. Anything that does not match above lands here.
     handle {
         root * /opt/workshop-nexus-intro-instruqt/slides/deploy/landing

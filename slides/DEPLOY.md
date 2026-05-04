@@ -71,7 +71,7 @@ After DNS has propagated and Caddy has fetched a Let's Encrypt cert (a few secon
 
 ```bash
 curl -I https://nexus.ziggy.codes/                            # 200, landing
-curl -I https://nexus.ziggy.codes/slides                      # 200, Slidev (no auth)
+curl -I https://nexus.ziggy.codes/slides/                     # 200, Slidev (no auth, trailing slash required)
 curl -I https://nexus.ziggy.codes/slides/presenter            # 401
 curl -I -u mason:<password> https://nexus.ziggy.codes/slides/presenter   # 200
 curl -I https://nexus.ziggy.codes/game                        # 200, text/html
@@ -152,6 +152,7 @@ systemctl reload caddy       # after Caddyfile edits
 ## Troubleshooting
 
 - **Slides load but assets 404.** The `--base` flag passed to `pnpm dev` in the systemd unit must end with a trailing slash (`/slides/`, not `/slides`) and match the Caddy reverse-proxy prefix. Slidev does not honour `base` in `vite.config.ts`; the flag is the only mechanism. Restart the unit after changing it.
+- **Presenter view shows "No notes for this slide" on every slide.** Slidev's `/@server-reactive/*` Vite endpoints emit at the root path even when `--base /slides/` is set, so the SPA's data fetches fall through to the landing-page handler. The Caddyfile has a `handle /@*` block that rewrites un-prefixed Vite-internal paths to `/slides{uri}` before proxying. If you removed it, presenter notes break.
 - **WebSocket disconnects.** Caddy 2 supports the WebSocket upgrade transparently. If sync stops, check `journalctl -u caddy` for upgrade errors and verify the upstream is `localhost:3030`. The Vite HMR WebSocket connects under `/slides/` because of the base path; that path must reach the proxy.
 - **Presenter URL not protected.** The matcher is `path /slides/presenter /slides/presenter/*`. Both forms are needed; without the wildcard, deep links into the presenter UI bypass auth.
 - **`/export` 404s.** It's a Slidev client route, served by the dev server. Confirm `slidev` is running (`systemctl status slidev`) and that the Caddyfile rewrites `/export` to `/slides/export` before proxying.
