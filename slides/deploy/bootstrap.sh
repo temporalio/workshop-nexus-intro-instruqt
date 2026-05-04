@@ -3,8 +3,8 @@
 # Installs Node, pnpm, git, Caddy; clones both repos to /opt; configures
 # the slidev systemd unit and Caddyfile; restarts services. Safe to re-run.
 #
-# Usage:
-#   sudo bash bootstrap.sh --domain nexus.ziggy.codes
+# Runs everything as root. SSH in as root and:
+#   bash bootstrap.sh --domain nexus.ziggy.codes
 #
 # All flags are optional; missing values are prompted for. Re-running with
 # the same args reapplies config without breaking anything.
@@ -14,17 +14,17 @@ set -euo pipefail
 DOMAIN="${DOMAIN:-}"
 PRESENTER_USER="${PRESENTER_USER:-mason}"
 PRESENTER_PASSWORD="${PRESENTER_PASSWORD:-}"
-DECK_REPO="${DECK_REPO:-https://github.com/temporalio/workshop-nexus-intro}"
+DECK_REPO="${DECK_REPO:-https://github.com/temporalio/workshop-nexus-intro-instruqt}"
 CODE_REPO="${CODE_REPO:-https://github.com/temporalio/workshop-nexus-intro-code}"
 DECK_REF="${DECK_REF:-main}"
 CODE_REF="${CODE_REF:-main}"
 
-DECK_DIR=/opt/workshop-nexus-intro
+DECK_DIR=/opt/workshop-nexus-intro-instruqt
 CODE_DIR=/opt/workshop-nexus-intro-code
 
 usage() {
     cat <<EOF
-Usage: sudo bash $0 [options]
+Usage: bash $0 [options]
 
 Options:
   --domain DOMAIN          Public domain (e.g. nexus.ziggy.codes). Prompted if absent.
@@ -59,7 +59,7 @@ info() { printf '   %s\n' "$1"; }
 # --------- pre-flight ---------
 
 if [[ $EUID -ne 0 ]]; then
-    echo "This script must run as root. Re-run with: sudo bash $0 ..." >&2
+    echo "This script runs as root. Re-run as: bash $0 ... (or sudo bash $0 ...)" >&2
     exit 1
 fi
 
@@ -128,17 +128,7 @@ else
     info "Caddy already installed ($(caddy version | head -n1))"
 fi
 
-# --------- 2. slidev system user ---------
-
-banner "Creating slidev user"
-if ! id slidev >/dev/null 2>&1; then
-    useradd --system --create-home --shell /bin/bash slidev
-    info "Created slidev user"
-else
-    info "slidev user already exists"
-fi
-
-# --------- 3. clone repos ---------
+# --------- 2. clone repos ---------
 
 banner "Cloning repositories"
 
@@ -146,40 +136,38 @@ clone_or_update() {
     local repo="$1" dir="$2" ref="$3"
     if [[ -d "$dir/.git" ]]; then
         info "Updating $dir"
-        sudo -u slidev git -C "$dir" fetch --quiet origin
-        sudo -u slidev git -C "$dir" checkout --quiet "$ref"
-        sudo -u slidev git -C "$dir" pull --ff-only --quiet origin "$ref" || true
+        git -C "$dir" fetch --quiet origin
+        git -C "$dir" checkout --quiet "$ref"
+        git -C "$dir" pull --ff-only --quiet origin "$ref" || true
     else
         info "Cloning $repo -> $dir"
-        install -d -m 0755 -o slidev -g slidev "$dir"
-        sudo -u slidev git clone --quiet "$repo" "$dir"
-        sudo -u slidev git -C "$dir" checkout --quiet "$ref"
+        install -d -m 0755 "$dir"
+        git clone --quiet "$repo" "$dir"
+        git -C "$dir" checkout --quiet "$ref"
     fi
 }
 
 clone_or_update "$DECK_REPO" "$DECK_DIR" "$DECK_REF"
 clone_or_update "$CODE_REPO" "$CODE_DIR" "$CODE_REF"
 
-# Caddy reads files directly from /opt; ensure world-readable.
-chmod -R o+rX "$DECK_DIR" "$CODE_DIR"
-
-# --------- 4. install slidev deps ---------
+# --------- 3. install slidev deps ---------
 
 banner "Installing Slidev dependencies"
-# Skip Playwright Chromium download: PDF is generated locally and synced.
-sudo -u slidev env \
-    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
-    HOME=/home/slidev \
-    bash -lc "cd $DECK_DIR/slides && pnpm install --frozen-lockfile --prefer-offline"
+# Skip Playwright Chromium: /export is Slidev's built-in client route
+# (browser print-to-PDF), not a server-rendered PDF file. No headless
+# browser needed on the VPS. pnpm warns about root; harmless.
+cd "$DECK_DIR/slides"
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 pnpm install --frozen-lockfile --prefer-offline
+cd - >/dev/null
 
-# --------- 5. systemd unit ---------
+# --------- 4. systemd unit ---------
 
 banner "Installing systemd unit"
 install -m 0644 "$DECK_DIR/slides/deploy/slidev.service" /etc/systemd/system/slidev.service
 systemctl daemon-reload
 systemctl enable --quiet slidev
 
-# --------- 6. Caddyfile ---------
+# --------- 5. Caddyfile ---------
 
 banner "Configuring Caddy"
 
@@ -206,9 +194,8 @@ caddy validate --config "$TMPFILE" --adapter caddyfile >/dev/null
 install -m 0644 "$TMPFILE" /etc/caddy/Caddyfile
 
 install -d -m 0755 /var/log/caddy
-chown caddy:caddy /var/log/caddy 2>/dev/null || true
 
-# --------- 7. start services ---------
+# --------- 6. start services ---------
 
 banner "Starting services"
 systemctl restart slidev
@@ -226,7 +213,7 @@ fi
 info "slidev: active"
 info "caddy:  active"
 
-# --------- 8. summary ---------
+# --------- 7. summary ---------
 
 banner "Done"
 cat <<EOF
@@ -240,18 +227,19 @@ Smoke tests (run once DNS has propagated and Let's Encrypt has issued the cert):
   curl -I https://$DOMAIN/slides/presenter                           # 401 expected
   curl -I -u $PRESENTER_USER:'<password>' https://$DOMAIN/slides/presenter   # 200
   curl -I https://$DOMAIN/game
-  curl -I https://$DOMAIN/export                                     # 404 until first PDF sync
+  curl -I https://$DOMAIN/export                                     # 200, Slidev /export UI
 
-Next steps from your laptop (in the deck repo):
+To pick up edits later, push to git from your laptop, then on the VPS:
 
+  cd $DECK_DIR
+  git pull
   cd slides
-  pnpm export                  # writes slides/public/export.pdf
-  cd ..
-  slides/deploy/sync-to-vps.sh slidev@$DOMAIN
+  pnpm install     # only if package.json changed
+  systemctl restart slidev   # only if HMR doesn't pick up automatically
 
-That uploads the PDF and any local edits. The room HMRs without a restart.
+Or just re-run this bootstrap with --deck-ref to pin a tag/sha.
 
 Logs:
-  sudo journalctl -u slidev -f
-  sudo journalctl -u caddy -f
+  journalctl -u slidev -f
+  journalctl -u caddy -f
 EOF

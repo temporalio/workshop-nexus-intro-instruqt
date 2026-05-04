@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 <style>
   /* Tokens cribbed verbatim from slides/theme-temporal/styles/layout.css so the
-     landing reads as deck-native. Body color is the cool-blue text, headings are
+     landing reads as deck-native. Body is the cool-blue text, headings are
      near-white, the eyebrow picks up lavender like the cover layout's <h2>. */
   :root {
     --temporal-bg:          #0B1020;
@@ -40,7 +40,7 @@
     padding: 4rem 1.5rem;
   }
   .wrap {
-    max-width: 760px;
+    max-width: 880px;
     width: 100%;
   }
   .eyebrow {
@@ -68,13 +68,30 @@
     margin: 0 0 3rem;
     max-width: 56ch;
   }
+  .section {
+    margin-top: 2.5rem;
+  }
+  .section:first-of-type {
+    margin-top: 0;
+  }
+  .section-label {
+    color: var(--temporal-text-muted);
+    font-weight: 400;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0 0 1rem;
+  }
   .grid {
     display: grid;
     gap: 1rem;
     grid-template-columns: 1fr;
   }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
   @media (min-width: 720px) {
-    .grid { grid-template-columns: repeat(3, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
   }
   .card {
     display: flex;
@@ -116,6 +133,9 @@
   .card-cta::after {
     content: " \2192";
   }
+  .card-cta.external::after {
+    content: " \2197";
+  }
   footer {
     margin-top: 3.5rem;
     color: var(--temporal-text-muted);
@@ -136,27 +156,47 @@
   <div class="wrap">
     <p class="eyebrow">Replay 2026 Workshop</p>
     <h1>Introduction to Temporal Nexus</h1>
-    <p class="subtitle">A 3.5-hour hands-on workshop. Pick a surface to begin.</p>
+    <p class="subtitle">Every link you need today. Keep this tab open.</p>
 
-    <div class="grid">
-      <a class="card" href="/slides">
-        <p class="card-title">Slides</p>
-        <p class="card-desc">Follow the live deck. Updates push to your browser as the room moves.</p>
-        <span class="card-cta">Open</span>
-      </a>
+    <section class="section">
+      <p class="section-label">Workshop Environments</p>
+      <div class="grid grid-3">
+        <a class="card" href="https://t.mp/replay26-nexus" target="_blank" rel="noopener">
+          <p class="card-title">Instruqt</p>
+          <p class="card-desc">Hands-on coding environment. Each chapter's exercise lives here.</p>
+          <span class="card-cta external">Open lab</span>
+        </a>
 
-      <a class="card" href="/game">
-        <p class="card-title">Topology Sandbox</p>
-        <p class="card-desc">Stop and start workers in the browser; watch in-flight workflows pause, not fail.</p>
-        <span class="card-cta">Play</span>
-      </a>
+        <a class="card" href="/slides">
+          <p class="card-title">Slides</p>
+          <p class="card-desc">Live deck. Your view follows the room as we move through the workshop.</p>
+          <span class="card-cta">Open slides</span>
+        </a>
 
-      <a class="card" href="/export">
-        <p class="card-title">Slides PDF</p>
-        <p class="card-desc">Download the full deck for offline reference.</p>
-        <span class="card-cta">Download</span>
-      </a>
-    </div>
+        <a class="card" href="https://ahaslides.com/NEXUSWS" target="_blank" rel="noopener">
+          <p class="card-title">AhaSlides</p>
+          <p class="card-desc">Interactive polls and graded quizzes between chapters.</p>
+          <span class="card-cta external">Join</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <p class="section-label">Reference</p>
+      <div class="grid grid-2">
+        <a class="card" href="/game">
+          <p class="card-title">Topology Sandbox</p>
+          <p class="card-desc">Stop and start workers in the browser; watch in-flight workflows pause, not fail.</p>
+          <span class="card-cta">Play</span>
+        </a>
+
+        <a class="card" href="/export">
+          <p class="card-title">Export Slides</p>
+          <p class="card-desc">Save the deck as PDF or PNGs for offline reference. Always reflects the latest version.</p>
+          <span class="card-cta">Open exporter</span>
+        </a>
+      </div>
+    </section>
 
     <footer>
       Built with <a href="https://temporal.io">Temporal</a>.

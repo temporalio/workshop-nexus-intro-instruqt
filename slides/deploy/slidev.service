@@ -6,11 +6,11 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=slidev
-Group=slidev
-WorkingDirectory=/opt/workshop-nexus-intro/slides
+User=root
+Group=root
+WorkingDirectory=/opt/workshop-nexus-intro-instruqt/slides
 Environment=NODE_ENV=development
-Environment=HOME=/home/slidev
+Environment=HOME=/root
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # Vite base path so the dev server emits assets and HMR URLs prefixed
 # with /slides/ to match the Caddy reverse-proxy. See slides/vite.config.ts.
@@ -20,11 +20,11 @@ StandardInput=null
 Restart=always
 RestartSec=3
 
-# Hardening. The dev server only needs to read its own working tree.
+# Light hardening. Service runs as root; these limit the blast radius
+# of an exploited dev server without getting in the way of pnpm/Vite.
 NoNewPrivileges=true
 ProtectSystem=strict
-ProtectHome=read-only
-ReadWritePaths=/opt/workshop-nexus-intro
+ReadWritePaths=/opt/workshop-nexus-intro-instruqt
 PrivateTmp=true
 
 [Install]

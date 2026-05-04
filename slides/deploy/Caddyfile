@@ -3,7 +3,7 @@
 #   /                 - landing page (static, three buttons)
 #   /slides           - Slidev dev server, reverse-proxied to localhost:3030
 #   /slides/presenter - same, but locked behind HTTP basic auth
-#   /export           - downloadable PDF (also at /export.pdf)
+#   /export           - Slidev's built-in export UI (print-to-PDF / PNG)
 #   /game             - static topology sandbox from the sibling code repo
 #
 # Before installing:
@@ -32,12 +32,13 @@ nexus.example.com {
         file_server
     }
 
-    # PDF export. /export and /export.pdf both rewrite to the path Slidev
-    # serves the PDF at (slides/public/export.pdf, base-prefixed by Vite),
-    # then reverse-proxy to the dev server. Single owner of the asset.
-    @export path /export /export.pdf
+    # Export route. Slidev ships a /export client page (browser
+    # print-to-PDF + PNG capture UI). We rewrite /export to its
+    # base-prefixed path and proxy through. No file on disk, no
+    # headless browser, always current with the deck.
+    @export path /export
     handle @export {
-        rewrite * /slides/export.pdf
+        rewrite * /slides/export
         reverse_proxy localhost:3030
     }
 
@@ -60,7 +61,7 @@ nexus.example.com {
 
     # Landing page at /. Anything that does not match above lands here.
     handle {
-        root * /opt/workshop-nexus-intro/slides/deploy/landing
+        root * /opt/workshop-nexus-intro-instruqt/slides/deploy/landing
         try_files {path} /index.html
         file_server
     }
