@@ -12,10 +12,10 @@ WorkingDirectory=/opt/workshop-nexus-intro-instruqt/slides
 Environment=NODE_ENV=development
 Environment=HOME=/root
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-# Vite base path so the dev server emits assets and HMR URLs prefixed
-# with /slides/ to match the Caddy reverse-proxy. See slides/vite.config.ts.
-Environment=SLIDEV_BASE=/slides/
-ExecStart=/usr/bin/pnpm dev --port 3030
+# --base must be passed on the CLI; Slidev does not honour the `base`
+# option in vite.config.ts, so the prefix has to come through here.
+# Matches the `/slides*` reverse_proxy block in deploy/Caddyfile.
+ExecStart=/usr/bin/pnpm dev --port 3030 --base /slides/
 StandardInput=null
 Restart=always
 RestartSec=3

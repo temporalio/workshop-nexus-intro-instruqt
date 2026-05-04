@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite'
 
-// Slidev auto-loads this. The base path is overridden by an env var so
-// local `pnpm dev` stays rooted at `/` while the VPS systemd unit sets
-// SLIDEV_BASE=/slides/ to match the Caddy reverse-proxy prefix.
+// Slidev auto-loads this. The base path is set via Slidev's `--base`
+// CLI flag in deploy/slidev.service, not here; Slidev does not merge
+// the `base` option from vite.config.ts.
 //
 // `server.allowedHosts: true` disables Vite's host-header check (added
 // in Vite 5 to mitigate DNS rebinding). The dev server only binds to
@@ -10,7 +10,6 @@ import { defineConfig } from 'vite'
 // any forwarded Host header is safe and means we don't have to thread the
 // public domain through systemd env on every deploy.
 export default defineConfig({
-  base: process.env.SLIDEV_BASE || '/',
   server: {
     allowedHosts: true,
   },

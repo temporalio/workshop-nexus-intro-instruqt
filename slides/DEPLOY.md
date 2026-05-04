@@ -59,7 +59,7 @@ The script prompts for a presenter password (or pass `--password "..."`), then:
 1. Installs Node 22, pnpm, git, rsync, and Caddy via apt.
 2. Clones both repos to `/opt/workshop-nexus-intro-instruqt` and `/opt/workshop-nexus-intro-code` (or `git pull`s if they're already there).
 3. Runs `pnpm install` for the Slidev deck (`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` because we use Slidev's runtime export UI, not the CLI's headless render).
-4. Installs the `slidev.service` systemd unit. The unit runs as root with `SLIDEV_BASE=/slides/` so Vite emits prefixed asset URLs.
+4. Installs the `slidev.service` systemd unit. The unit runs `pnpm dev --base /slides/` as root so Slidev emits prefixed asset URLs that match the Caddy reverse-proxy.
 5. Renders `/etc/caddy/Caddyfile` with your domain and a bcrypt-hashed presenter password.
 6. Validates the Caddyfile, restarts both services, and prints smoke-test commands.
 
@@ -151,7 +151,7 @@ systemctl reload caddy       # after Caddyfile edits
 
 ## Troubleshooting
 
-- **Slides load but assets 404.** The `SLIDEV_BASE` env var in the systemd unit must end with a trailing slash (`/slides/`, not `/slides`). Confirm `vite.config.ts` is present in `slides/`. Restart the unit after changing either.
+- **Slides load but assets 404.** The `--base` flag passed to `pnpm dev` in the systemd unit must end with a trailing slash (`/slides/`, not `/slides`) and match the Caddy reverse-proxy prefix. Slidev does not honour `base` in `vite.config.ts`; the flag is the only mechanism. Restart the unit after changing it.
 - **WebSocket disconnects.** Caddy 2 supports the WebSocket upgrade transparently. If sync stops, check `journalctl -u caddy` for upgrade errors and verify the upstream is `localhost:3030`. The Vite HMR WebSocket connects under `/slides/` because of the base path; that path must reach the proxy.
 - **Presenter URL not protected.** The matcher is `path /slides/presenter /slides/presenter/*`. Both forms are needed; without the wildcard, deep links into the presenter UI bypass auth.
 - **`/export` 404s.** It's a Slidev client route, served by the dev server. Confirm `slidev` is running (`systemctl status slidev`) and that the Caddyfile rewrites `/export` to `/slides/export` before proxying.
@@ -205,7 +205,7 @@ systemctl enable --now slidev
 systemctl status slidev
 ```
 
-The unit runs `pnpm dev --port 3030` as root with `SLIDEV_BASE=/slides/`. The `slides/vite.config.ts` reads that env var and sets Vite's `base` accordingly, so all asset URLs and HMR WebSockets emit prefixed with `/slides/`. Local dev (no env var set) stays at `/`.
+The unit runs `pnpm dev --port 3030 --base /slides/` as root. Slidev's `--base` flag prefixes every asset URL and HMR WebSocket so they line up with the Caddy reverse-proxy at `/slides*`. Local dev (`pnpm dev` with no flag) stays at `/`. Slidev does not merge `base` from `vite.config.ts`, so the CLI flag is required.
 
 ### 4. Configure Caddy
 
