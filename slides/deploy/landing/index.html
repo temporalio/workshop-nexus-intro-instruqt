@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Introduction to Temporal Nexus &mdash; Replay 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Tokens cribbed verbatim from slides/theme-temporal/styles/layout.css so the
+     landing reads as deck-native. Body color is the cool-blue text, headings are
+     near-white, the eyebrow picks up lavender like the cover layout's <h2>. */
+  :root {
+    --temporal-bg:          #0B1020;
+    --temporal-bg-elev:     #111827;
+    --temporal-text:        #C7D7FE;
+    --temporal-text-strong: #F8FAFC;
+    --temporal-text-muted:  #7C8FB1;
+    --temporal-green:       #59FDA0;
+    --temporal-lavender:    #C3A0FF;
+    --temporal-border:      rgba(199, 215, 254, 0.12);
+    --temporal-border-hi:   rgba(199, 215, 254, 0.28);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--temporal-bg);
+    color: var(--temporal-text);
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-weight: 300;
+    font-feature-settings: 'ss01', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  main {
+    min-height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 4rem 1.5rem;
+  }
+  .wrap {
+    max-width: 760px;
+    width: 100%;
+  }
+  .eyebrow {
+    color: var(--temporal-lavender);
+    font-weight: 300;
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 1rem;
+  }
+  h1 {
+    color: var(--temporal-text-strong);
+    font-size: clamp(2.25rem, 5vw, 3rem);
+    font-weight: 200;
+    letter-spacing: -0.012em;
+    line-height: 1.1;
+    margin: 0 0 0.75rem;
+    max-width: 18ch;
+  }
+  .subtitle {
+    color: var(--temporal-text);
+    font-size: 1.0625rem;
+    font-weight: 300;
+    line-height: 1.5;
+    margin: 0 0 3rem;
+    max-width: 56ch;
+  }
+  .grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 720px) {
+    .grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.75rem 1.5rem;
+    background: var(--temporal-bg-elev);
+    border: 1px solid var(--temporal-border);
+    border-radius: 12px;
+    color: var(--temporal-text);
+    text-decoration: none;
+    transition: border-color 120ms ease, transform 120ms ease;
+  }
+  .card:hover, .card:focus-visible {
+    border-color: var(--temporal-border-hi);
+    transform: translateY(-2px);
+    outline: none;
+  }
+  .card-title {
+    color: var(--temporal-text-strong);
+    font-size: 1.125rem;
+    font-weight: 400;
+    letter-spacing: -0.005em;
+    margin: 0 0 0.4rem;
+  }
+  .card-desc {
+    color: var(--temporal-text);
+    font-size: 0.9375rem;
+    font-weight: 300;
+    line-height: 1.45;
+    margin: 0 0 1.25rem;
+    flex-grow: 1;
+  }
+  .card-cta {
+    color: var(--temporal-green);
+    font-size: 0.875rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+  .card-cta::after {
+    content: " \2192";
+  }
+  footer {
+    margin-top: 3.5rem;
+    color: var(--temporal-text-muted);
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+  }
+  footer a {
+    color: var(--temporal-green);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(89, 253, 160, 0.35);
+    transition: border-color 120ms ease;
+  }
+  footer a:hover { border-bottom-color: var(--temporal-green); }
+</style>
+</head>
+<body>
+<main>
+  <div class="wrap">
+    <p class="eyebrow">Replay 2026 Workshop</p>
+    <h1>Introduction to Temporal Nexus</h1>
+    <p class="subtitle">A 3.5-hour hands-on workshop. Pick a surface to begin.</p>
+
+    <div class="grid">
+      <a class="card" href="/slides">
+        <p class="card-title">Slides</p>
+        <p class="card-desc">Follow the live deck. Updates push to your browser as the room moves.</p>
+        <span class="card-cta">Open</span>
+      </a>
+
+      <a class="card" href="/game">
+        <p class="card-title">Topology Sandbox</p>
+        <p class="card-desc">Stop and start workers in the browser; watch in-flight workflows pause, not fail.</p>
+        <span class="card-cta">Play</span>
+      </a>
+
+      <a class="card" href="/export">
+        <p class="card-title">Slides PDF</p>
+        <p class="card-desc">Download the full deck for offline reference.</p>
+        <span class="card-cta">Download</span>
+      </a>
+    </div>
+
+    <footer>
+      Built with <a href="https://temporal.io">Temporal</a>.
+    </footer>
+  </div>
+</main>
+</body>
+</html>
