@@ -1,0 +1,28 @@
+[Unit]
+Description=Slidev dev server for the Nexus workshop deck
+Documentation=https://sli.dev
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=slidev
+Group=slidev
+WorkingDirectory=/opt/workshop-nexus-intro/slides
+Environment=NODE_ENV=development
+Environment=HOME=/home/slidev
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/usr/bin/pnpm dev --port 3030
+StandardInput=null
+Restart=always
+RestartSec=3
+
+# Hardening. The dev server only needs to read its own working tree.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/workshop-nexus-intro
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

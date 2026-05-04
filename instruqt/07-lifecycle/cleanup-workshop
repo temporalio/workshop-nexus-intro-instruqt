@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+pkill -f "payments.worker"     || true
+pkill -f "compliance.worker"   || true
+pkill -f "ComplianceWorkerApp" || true
+sleep 1
+ps aux | grep -E "(payments\.worker|compliance\.worker|ComplianceWorkerApp)" \
+       | grep -v grep || true

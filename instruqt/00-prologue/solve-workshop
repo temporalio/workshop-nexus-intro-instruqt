@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+
+# The prologue is observation only. There is nothing to solve; the
+# visualizer is already running in the Topology Sandbox tab. This
+# script exists so the chapter conforms to the per-chapter file
+# convention used by every other chapter in the track.
+echo "The Topology Sandbox is observation only. Click Stop on a service in the tab and watch the in-flight workflows. There is nothing to run from a terminal."

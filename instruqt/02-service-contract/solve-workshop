@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euxo pipefail
+source /root/.bashrc
+
+pkill -f "payments.worker"   || true
+pkill -f "compliance.worker" || true
+sleep 1
+
+# Drop the chapter's solution over the exercise dir.
+SOLUTION=/root/workshop/exercises/02_service_contract/solution
+EXERCISE=/root/workshop/exercises/02_service_contract/exercise
+cp -r "$SOLUTION/." "$EXERCISE/"
+
+# Idempotently create the Nexus Endpoint.
+temporal operator nexus endpoint create \
+    --name compliance-endpoint \
+    --target-namespace compliance-namespace \
+    --target-task-queue compliance-risk \
+    --description-file /root/workshop/compliance-endpoint.md \
+    --address 127.0.0.1:7233 || true

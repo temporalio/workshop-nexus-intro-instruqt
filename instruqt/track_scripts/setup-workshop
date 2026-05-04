@@ -1,0 +1,60 @@
+#!/bin/bash
+# Track-level setup. Runs once when the attendee first enters the track.
+#
+# The workshop image (ghcr.io/temporalio/workshop-nexus-intro-sandbox) bakes
+# in Python, JDK, Maven, uv, the Temporal CLI, and the workshop source tree
+# at /opt/workshop. This script wires up the runtime environment:
+#
+#   1. Wait for Instruqt host bootstrap.
+#   2. Stage the workshop source from /opt/workshop into /root/workshop.
+#   3. Start the Temporal dev server in the background.
+#   4. Wait for it to accept gRPC connections.
+#   5. Pre-create the payments-namespace and compliance-namespace namespaces.
+
+set -euo pipefail
+
+# 1. Wait for Instruqt host bootstrap.
+until [ -f /opt/instruqt/bootstrap/host-bootstrap-completed ]; do
+    sleep 1
+done
+
+# 2. Stage shared root files into the attendee's writable working tree.
+#    /opt/workshop (the baked image source) is read-only by convention.
+#    Per-challenge setup scripts sparse-stage one chapter at a time into
+#    /root/workshop/exercises/, so that directory is intentionally empty
+#    here. The attendee's first per-challenge setup populates it.
+if [ ! -d /root/workshop ]; then
+    cp -r /opt/workshop /root/workshop
+    rm -rf /root/workshop/exercises
+    mkdir -p /root/workshop/exercises
+fi
+
+# 3. Start the Temporal dev server. SQLite at /root/temporal.db keeps state
+#    durable across track re-entries (handy for instructor recovery).
+nohup temporal server start-dev \
+    --ip 0.0.0.0 \
+    --db-filename /root/temporal.db \
+    --log-level warn \
+    > /tmp/temporal-server.log 2>&1 &
+echo $! > /tmp/temporal-server.pid
+
+# 4. Wait for the dev server to accept gRPC connections.
+echo "Waiting for Temporal dev server..."
+for i in $(seq 1 60); do
+    if temporal operator cluster health \
+         --address 127.0.0.1:7233 >/dev/null 2>&1; then
+        echo "Temporal dev server is ready."
+        break
+    fi
+    sleep 1
+done
+
+# 5. Pre-create namespaces. The dev server boots with only "default";
+#    chapters 2 onwards expect payments-namespace and compliance-namespace.
+#    `|| true` makes this idempotent on track re-entry.
+temporal operator namespace create payments-namespace \
+    --address 127.0.0.1:7233 || true
+temporal operator namespace create compliance-namespace \
+    --address 127.0.0.1:7233 || true
+
+echo "==> Track setup complete."

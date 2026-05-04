@@ -1,0 +1,58 @@
+name: Build sandbox image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docker/**"
+      - ".github/workflows/build-image.yml"
+  workflow_dispatch:
+    inputs:
+      code_ref:
+        description: "Ref of workshop-nexus-intro-code to build against (branch, tag, or sha)"
+        required: false
+        default: "main"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/temporalio/workshop-nexus-intro-sandbox
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout workshop-nexus-intro-code
+        uses: actions/checkout@v4
+        with:
+          repository: temporalio/workshop-nexus-intro-code
+          path: workshop-nexus-intro-code
+          ref: ${{ github.event.inputs.code_ref || 'main' }}
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: tags
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$REF_NAME" = "main" ]; then
+            echo "extra=${IMAGE}:latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "extra=${IMAGE}:${REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.tags.outputs.extra }}
+            ${{ env.IMAGE }}:${{ github.sha }}

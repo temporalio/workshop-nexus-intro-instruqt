@@ -1,0 +1,6 @@
+version: "3"
+containers:
+- name: workshop
+  image: ghcr.io/temporalio/workshop-nexus-intro-sandbox:init
+  shell: /bin/bash
+  memory: 4096
