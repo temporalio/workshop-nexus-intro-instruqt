@@ -96,27 +96,33 @@ layout: default
 
 # Three Environments
 
-You'll move between three browser tabs all day.
+Three surfaces, one URL. Keep the landing page open all day; everything else opens from there.
 
 <br>
 
-<div class="flex items-start gap-8">
+<div class="hub-url">
 
-<div class="flex-1">
+**nexus.ziggy.codes**
 
-| Surface       | What lives there         | How to access |
-| :------------ | :----------------------- | --- |
-| **Instruqt**  | Hands-on coding environment | https://t.mp/replay26-nexus |
-| **AhaSlides** | Interactive exercises | https://ahaslides.com/NEXUSWS |
-| **Slidev**    | Live view of slides (Optional) | |
+</div>
 
 <br>
 
-</div>
+| Surface       | What lives there         |
+| :------------ | :----------------------- |
+| **Instruqt**  | Hands-on coding environment |
+| **AhaSlides** | Interactive exercises |
+| **Slidev**    | Live view of slides (Optional) |
 
-<img src="/ahaslides-qrcode.png" alt="AhaSlides QR code" class="w-48 h-48 shrink-0" />
-
-</div>
+<style>
+.hub-url {
+  text-align: center;
+  font-size: 2.4rem;
+  color: var(--temporal-green);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+</style>
 
 ---
 layout: default
