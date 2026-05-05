@@ -107,11 +107,9 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
+- **AhaSlides live 33 to 34** (one poll + one word cloud, neither graded).
 - "Java handler. Same Service contract. Same Endpoint. Same wire format. Zero changes in Python. Two quick questions on AhaSlides while it sinks in."
+- AhaSlides live 33, poll: "Reaction to the Java handler running the same Service contract?"
+- AhaSlides live 34, word cloud: "What language would YOU bridge to Temporal next?" Common responses: Go, Rust, .NET, Ruby, PHP, Kotlin, Scala.
 - "Hold those answers in your head, find me at the booth if you want to talk about a specific bridge. Now let's wrap."
-
-## Teaching notes
-
-- AhaSlides poll trigger: "Reaction to the Java handler running the same Service contract?"
-- AhaSlides word cloud trigger: "What language would YOU bridge to Temporal next?" Common responses: Go, Rust, .NET, Ruby, PHP, Kotlin, Scala.
 -->

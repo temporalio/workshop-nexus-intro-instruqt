@@ -348,19 +348,18 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
+- **AhaSlides live 28 to 31** (final graded block, 4 questions). **Live 32 is the Ch 7 leaderboard, the last regular standings before the Polyglot demo.**
 - "Last graded block of the workshop. Four questions. Lock in those production reflexes."
+- AhaSlides live 28, match pairs (graded): "Pick your Cancel: match each cancellation type to its scenario."
+  - ABANDON to "Caller is shutting down; don't wait at all"
+  - TRY_CANCEL to "Wait until the cancel is delivered to the handler"
+  - WAIT_REQUESTED to "Wait until the handler acknowledges the cancel"
+  - WAIT_COMPLETED to "Wait for the handler to exit cleanly"
+- AhaSlides live 29, pick answer (graded): "OperationError vs HandlerError: which one triggers automatic retry?" Correct: **HandlerError**. (OperationError is permanent / business reason; HandlerError is transient / infra. Same model as Activity errors.)
+- AhaSlides live 30, pick answer (graded): "You see 'State: Blocked / BlockedReason: The circuit breaker is open' in `temporal workflow describe`. What's happening?" Correct: **5+ consecutive errors hit on this caller-namespace + endpoint pair; the breaker is shedding load**.
+- AhaSlides live 31, pick answer (graded): "After how many consecutive errors does the circuit breaker open?" Correct: **5**.
+- AhaSlides live 32, leaderboard: standings after Ch 7. The last regular standings; final celebration leaderboard at live 35.
 - "Last graded block done. Final scoring is locked in. One quick recap, then the fun bit, let's break the language assumption with the polyglot demo. Watch this."
-
-## Teaching notes
-
-- AhaSlides match pairs trigger: "Pick your Cancel: ABANDON, TRY_CANCEL, WAIT_REQUESTED, WAIT_COMPLETED."
-  - ABANDON → caller is being torn down anyway.
-  - TRY_CANCEL → you want guaranteed delivery, not result.
-  - WAIT_REQUESTED → mid-strict, you need a receipt.
-  - WAIT_COMPLETED → strictest, shutdown order matters.
-- AhaSlides pick answer trigger: "OperationError vs HandlerError: which one triggers automatic retry?" Correct: HandlerError. OperationError is permanent (business reason); HandlerError is transient (infra problem). Same model as Activity errors.
-- AhaSlides pick answer trigger: "You see 'State: Blocked / BlockedReason: The circuit breaker is open' in `temporal workflow describe`. What's happening?" Correct: the platform has stopped routing new Operations on this caller-namespace + Endpoint pair after 5 consecutive retryable errors.
-- AhaSlides pick answer trigger: "After how many consecutive errors does the circuit breaker open?" Correct: 5.
 -->
 
 ---

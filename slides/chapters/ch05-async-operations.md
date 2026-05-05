@@ -325,16 +325,13 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
-- "Welcome back from the break. Let's see how much of the async picture stuck before we go convert that handler. Four questions."
+- **AhaSlides live 20 to 22** (2 graded + 1 self-assessment scale). The next leaderboard fires at live 23 (halftime).
+- "Welcome back from the break. Let's see how much of the async picture stuck before we go convert that handler. Three questions."
+- AhaSlides live 20, pick answer (graded): "Which timeout governs the handler workflow's total runtime, end-to-end?" Correct: **Schedule-to-Close** (up to 60 days on Temporal Cloud).
+- AhaSlides live 21, pick answer (graded): "Why does `WorkflowIDConflictPolicy.USE_EXISTING` matter on retry?" Correct: **A retry lands on the existing handler workflow instead of starting a new one** (without it: two starts, one wins, one fails; with it: second attaches).
+- AhaSlides live 22, scale 1-5 (not graded): "Could you pick the right timeout in production tomorrow?"
 - "If you see Started in the middle of those three, the handler is a workflow."
 - "OK, time to write it. Switch to Instruqt, four TODOs, 13 minutes, the handler becomes a real workflow."
-
-## Teaching notes
-
-- AhaSlides correct order trigger: "Async Operation lifecycle: drag the events into order." Expected order: Scheduled, Started, Completed.
-- AhaSlides pick answer trigger: "Which timeout governs the handler workflow's total runtime, end-to-end?" Correct: Schedule-to-Close (up to 60 days on Temporal Cloud).
-- AhaSlides pick answer trigger: "Why does WorkflowIDConflictPolicy.USE_EXISTING matter on retry?" Correct: makes the handler workflow start idempotent; a retry attaches to the existing workflow instead of failing. Without it: two clients trying to start the same workflow id, one wins, one fails. With it: second attaches.
-- AhaSlides scale 1-5 trigger: "Could you pick the right timeout in production tomorrow?"
 -->
 
 ---
@@ -399,24 +396,27 @@ layout: section
 Leaderboard, pulse check, then break
 
 <!--
+- **AhaSlides live 23** is the Halftime leaderboard. Just one slide here — the morning's pulse-check word cloud and Q&A parking lot were removed; both are handled live by the presenter during the actual break, not via the deck.
 - "Big morning. You decoupled the monolith into two namespaces, swapped the caller through Nexus, and turned the handler into a workflow-backed async operation. The full async picture is now under your fingers. Let's lock in what you saw, then take a leaderboard moment, then we break."
+- AhaSlides live 23, leaderboard: Halftime standings (cumulative score from live 5-22, including Ch 4's quiz at live 17-18 and its leaderboard at live 19).
 - "Sync = 2 events. Async = 3. The Started event in the middle is the giveaway that the handler is a workflow."
 - "These three are leading at halftime. Don't get comfortable, second half is where the points are."
-- "Drop questions while you walk to coffee. I'll triage and answer right after the break."
-- "OK, 15 minutes. We're back at 11:30 sharp. Coffee, restroom, drop questions in AhaSlides while you walk. See you back here."
+- "OK, 15 minutes. We're back at 11:30 sharp. Coffee, restroom, drop your questions verbally when we come back. See you back here."
 
 ## Teaching notes
 
 - This is the second of two breaks in the workshop. Block 2 (Ch 3 + Ch 4 + Ch 5) ends here; the Halftime leaderboard moment celebrates the morning's punchline (decoupled monolith + full async lifecycle).
-- AhaSlides Halftime block (slides 23-25) lands at this break: Halftime leaderboard + word-cloud pulse + Q&A parking lot.
-- AhaSlides leaderboard: Halftime standings.
-- AhaSlides word cloud trigger: "What's clicking? One word."
-- AhaSlides parking lot trigger: "Drop your questions for after the break."
 - If Ch 5's exercise ran long, eat into this break before letting it eat into Ch 6.
-- **Ch 4 AhaSlides quiz triggers (no dedicated Quiz Time slide in Ch 4 — historically embedded here).**
-  - Slide 17 pick answer: "How many Nexus events on a sync call?" Correct: **2** (Scheduled and Completed). Fire after the Ch 4 "Two Events, One Sync Call" beat, not at Halftime.
-  - Slide 18 match pairs: "Match the Event History event to what it means." Fire after Ch 4's Exercise 4, not at Halftime.
-  - Both questions feed into the Halftime leaderboard total at slide 23.
+- **Ch 4 AhaSlides quiz triggers — Ch 4 has NO dedicated Quiz Time Slidev slide; fire these inline during Ch 4 lecture/exercise:**
+  - **AhaSlides live 17**, pick answer (graded): "How many Nexus events appear in the caller's Event History on a sync call?" Correct: **2** (Scheduled and Completed). Fire after the Ch 4 "Two Events, One Sync Call" beat.
+  - **AhaSlides live 18**, match pairs (graded): "Match the Event History event to what it means."
+    - NexusOperationScheduled to "Caller dispatched the operation"
+    - NexusOperationStarted to "Async handler began running"
+    - NexusOperationCompleted to "Handler returned a result"
+    - NexusOperationFailed to "Permanent, non-retryable error"
+  - Fire live 18 after Ch 4's Exercise 4.
+  - **AhaSlides live 19**, leaderboard: standings after Ch 4. Fire immediately after live 18.
+- Ch 4's points feed the Halftime leaderboard total at live 23.
 -->
 
 

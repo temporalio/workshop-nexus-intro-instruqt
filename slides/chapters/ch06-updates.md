@@ -211,14 +211,15 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
+- **AhaSlides live 24** — categorise (graded): "Validator vs Handler: where does each action belong?"
+- Canonical categorisation per the AhaSlides editor:
+  - `@review.validator`: Reject when no review is pending; Reject if a decision was already made; Raise on a malformed input.
+  - `@workflow.update review` (the handler): Store the reviewer's decision; Wake the waiting workflow; Build the `ComplianceResult`.
 - "Before I show you the rest of this chapter, let's make sure the validator-vs-handler distinction is locked in. It's the easiest thing to get wrong."
 - "Locked in? Good. Let me show you how the workflow actually pauses while the validator runs."
 
 ## Teaching notes
 
-- AhaSlides categorise trigger: "Validator vs Handler: where does each action belong?"
-  - Validator side: "raise if workflow not awaiting review", "raise if review already submitted", "check that input is non-empty", "no state mutation".
-  - Handler side: "set self._review_result", "log to workflow.logger", "return ComplianceResult", "mutate workflow state".
 - People often put state checks in the handler. Validators do checks; handlers do work. Calibrate the explanation to whichever side the room got wrong.
 -->
 
@@ -591,14 +592,17 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
+- **AhaSlides live 25 to 26** (one graded pick-answer + one word cloud). **Live 27 is the Ch 6 leaderboard.**
 - "OK, you just made an Update fly through Nexus. Let's confirm what you saw, then I want to hear about your real systems."
+- AhaSlides live 25, pick answer (graded): "Which two events on the handler workflow confirm an Update succeeded?" Correct: **WorkflowExecutionUpdateAccepted + WorkflowExecutionUpdateCompleted** (configured as a single combined option in AhaSlides).
+- AhaSlides live 26, word cloud: "Name a human-in-the-loop scenario in your domain." Common responses: refunds, KYC, fraud review, content moderation, escalations, manual order approval, expense approval.
 - "All of those are textbook fits for the pattern you just built."
+- AhaSlides live 27, leaderboard: standings after Ch 6.
 - "OK, you've now built one of Temporal's most-asked patterns. Last big chapter: lifecycle control. Errors, cancellation, the circuit breaker. One quick recap and we're there."
 
 ## Teaching notes
 
-- AhaSlides pick answer trigger: "Which two events confirm an Update succeeded?" Correct: WorkflowExecutionUpdateAccepted + WorkflowExecutionUpdateCompleted. These are events on the handler workflow's history (compliance-ch06-TXN-B), not the caller's. The caller's history shows NexusOperationScheduled / Completed; the Update events live on the implementer side.
-- AhaSlides word cloud trigger: "Name a human-in-the-loop scenario in your domain." Common responses: refunds, KYC, fraud review, content moderation, escalations, manual order approval, expense approval.
+- The Update events live on the **handler workflow's** history (`compliance-ch06-TXN-B`), not the caller's. The caller's history shows `NexusOperationScheduled` / `Completed`; the Update events live on the implementer side.
 -->
 
 ---

@@ -12,14 +12,11 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
+- **AhaSlides live 35** — leaderboard: Final standings. Cumulative score across the whole workshop's 19 graded items: live 5-11 (Comp 1, 7 questions including the match-pairs at 9), 14-15 (sync handler, 2), 17-18 (event history, 2), 20-21 (async timeouts + USE_EXISTING, 2), 24-25 (validator/handler + update events, 2), 28-31 (cancellation + errors + circuit breaker, 4).
 - "Alright, final standings. The whole morning's points are on this board. Let's see who's taking it home."
 - "First place, name. Second, name. Third, name. Big round of applause."
 - "If you missed the podium by one or two questions, catch me at the booth if you want to argue."
 - "Congratulations to the top three. Before you go, let's recap what you actually did this morning, then I want one specific commitment from each of you."
-
-## Teaching notes
-
-- AhaSlides leaderboard: Final standings.
 -->
 
 ---
@@ -381,17 +378,15 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
+- **AhaSlides live 36 to 38** (three reflection prompts, none graded).
 - "Three last questions on AhaSlides. The first one is the only one that matters for you, pick something specific to try when you get back to your team."
+- AhaSlides live 36, brainstorm: "What will you try first when you get back to your team?" (Commitment device.)
 - "Even one word. 'Refunds.' 'KYC.' 'The Go service.' Pick one."
+- AhaSlides live 37, scale 0-10: "Likelihood to recommend Nexus to a colleague." (NPS-flavored signal for course iteration.)
+- AhaSlides live 38, open-ended: "What still feels fuzzy?" (Drives next-iteration content priorities.)
 - "Updates feels fuzzy? Let me give you the one-sentence summary right now."
 - "I'll address these in a follow-up post in the #nexus channel."
 - "Thank you. Final slide, Q&A is open. I'm staying right here, and I'm at the booth all afternoon."
-
-## Teaching notes
-
-- AhaSlides brainstorm trigger: "What will you try first when you get back to your team?"
-- AhaSlides scale 0-10 trigger: "Likelihood to recommend Nexus to a colleague."
-- AhaSlides open-ended trigger: "What still feels fuzzy?"
 -->
 
 ---

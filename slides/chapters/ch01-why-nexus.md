@@ -192,8 +192,9 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
+- **AhaSlides live 4** (the poll). The next advance lands on live 5 (start of the Ch 1 graded block).
 - "Quick show of hands, AhaSlides edition. One question."
-- AhaSlides poll: "Have you ever wrapped a teammate's Workflow in an HTTP API?"
+- AhaSlides live 4, poll: "Have you ever wrapped a teammate's Workflow in an HTTP API?"
 - "OK, so this isn't a hypothetical for any of you."
 - "Lucky you, most teams hit this within their first year on Temporal. Today is the easy way to skip the pain."
 - "Now, before we look at fixes, let's actually run the monolith. Feel the architecture before we change it."
@@ -588,27 +589,42 @@ Nexus has two constraints that affect design choices.
 ---
 layout: exercise
 minutes: 2
-heading: Durable RPC
+heading: Durable Simulation
 ---
 
 **Watch a Nexus-connected system survive a Worker crash.**
 
-Open Instruqt → **Topology Sandbox**. Stop a service. Watch in-flight Workflows
+Open the **Topology Sandbox**. Stop a service. Watch in-flight Workflows
 wait, not fail. Start it again. Watch them resume.
 
 The `Lost` counter stays at zero. That's the property worth the rest of the morning.
 
 <!--
-- This is the destination, what the room is going to build by the end of the morning. They've just heard the vocabulary (Service, Endpoint, Operation, sync vs async, the 10s and 60-day numbers). Now they get to see one running.
-- 2 minutes. Their hands, their tab. The point is them clicking, not you presenting.
-  - "Click Stop on the Compliance Worker. Watch the in-flight payments. They turn yellow. They do not fail."
-  - "Click Start. They resume from where they were."
-  - "Now do the same to the Nexus Endpoint. Same story."
-  - Pause. Let the room watch their own screens for a beat.
-- Land the punchline: "Look at the `Lost` counter. It's still zero. That's the property worth the rest of the morning."
-- Off-ramp before energy fades. "Come back to the slides when you're ready."
+- "Before you go hands-on with the actual code, I want you to *see* the property we're chasing. Open the Topology Sandbox link. This is a browser-only simulation, no Temporal cluster, no real workers. But the shape it's drawing is exactly what you'll build by 12:30."
+- Why a fake: a real Temporal cluster with three workers, dashboards, and event history would take 10 minutes to set up and another 10 to talk through. The simulation strips it down to the four things that matter and lets the room *play* with the chaos in 60 seconds.
+- Tell the room what they're looking at — four panes, left to right, top to bottom:
+  - **Topology** (top): three services, each with a Stop button. Payments Worker on the left, Nexus Endpoint in the middle, Compliance Worker on the right. The wires animate while traffic flows.
+  - **Score**: Completed, Declined, In Flight, Blocked, Lost. *Lost is the one to watch.*
+  - **Workflows In Flight**: each row is a synthetic payment moving through three steps — `validate_payment`, `check_compliance` (the Nexus async call), `execute_payment`. Step color tells you state: blue running, yellow blocked, green done.
+  - **Event History** (right): same event names you'll see in the real Temporal Web UI later — `ActivityTaskScheduled`, `NexusOperationScheduled`, `NexusOperationStarted`, `NexusOperationCompleted`, `WorkflowExecutionCompleted`. Worth pointing at: "the labels are real, the cluster is fake."
+- The talk track:
+  1. **Let it run for a beat.** New payments spawn every ~2 seconds. Most complete (green ✓), about 15% auto-decline as HIGH-risk (those are the synthetic Compliance checks; we'll build the real ones in Ch 5/6). Lost = 0.
+  2. **"Click Stop on the Compliance Worker."** In-flight payments at step 2 turn yellow — *blocked*, not failed. The Event History prints `NexusOperation pending — handler service unavailable`. New payments still spawn, validate fine, then queue at step 2. **Lost is still 0.**
+  3. **"Click Start on the Compliance Worker."** Yellow → blue → green. They resume from where they were, not from the beginning. The pause was free.
+  4. **"Now do the same with the Nexus Endpoint."** (the middle box). Same story, same Event History pattern, same `Lost = 0`. The Endpoint is the routing layer — when it's gone, the cross-team call can't be scheduled, but the caller workflow waits.
+  5. **Optional: Stop the Payments Worker** to show the symmetric case. The block is at step 1 (validate) or step 3 (execute), not step 2. Same property: pause-not-fail.
+- Land the punchline slowly: "**Look at the `Lost` counter. It's still zero.** Stop any service, any time, for any reason — the in-flight work waits. That property is what the rest of this workshop earns. The labels on those boxes — `Nexus Endpoint`, `compliance-endpoint`, `NexusOperationScheduled` — get defined chapter by chapter. The shape you're looking at *is* the destination."
+- Off-ramp before the energy fades: "Come back to the slides when you're ready. We're going to take a quick graded quiz and then start writing the contract."
 - After this, advance to Quiz Time. The room takes the AhaSlides graded checkpoint with both the theory AND the running system fresh in their head.
+
+## Teaching notes
+
+- This is the destination, what the room is going to build by the end of the morning. They've just heard the vocabulary (Service, Endpoint, Operation, sync vs async, the 10s and 60-day numbers). Now they get to see one running.
+- 2 minutes. Their hands, their tab. The point is them clicking, not you presenting. If the room is into it, let it stretch to 3; never let it eat into Ch 2.
+- **Honesty about the fake matters.** Calling it a "Durable Simulation" instead of a "Durable RPC demo" lands the right framing: we're not pretending Temporal magic — we're previewing the property your code will have when we finish. The room respects you more for the disclosure, and the punchline ("the property is real even though this isn't") lands harder.
+- The sandbox lives at `/game` on the workshop VPS (link from the landing page) or directly via Instruqt. It's a single HTML file from `temporalio/workshop-nexus-intro-code/game/index.html` — no server, no cluster, no dependencies.
 - Naming note: this is intentionally NOT numbered Exercise 1; that label belongs to "Run the Monolith." This is the destination tease, framed as a quick observation exercise rather than a numbered build step.
+- Common room reaction worth being ready for: someone asks "but it's just a JS simulation, would it really do this?" Answer: yes, and the second half of today is exactly that — you'll write the real code, run it on a real Temporal Cloud namespace, kill the worker mid-flight, and watch the same pause-not-fail. The simulation is the trailer; the workshop is the movie.
 -->
 
 ---
@@ -620,15 +636,21 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
+- **AhaSlides live 5 to 11** (Comp 1 graded checkpoint, 7 questions). **Live 12 is the Ch 1 leaderboard.**
 - "OK, before you go hands-on, let's see what's actually stuck. Seven questions, all graded. Don't overthink, leaderboard rewards speed."
-- AhaSlides pick answer: "Two teams, two namespaces, an audit boundary between them", correct: **Nexus**.
-- AhaSlides pick answer: "Same namespace, sibling Workflow you control end-to-end", correct: **Child Workflow**.
-- AhaSlides pick answer: "Third-party HTTP API from inside a Workflow", correct: **Activity**.
-- AhaSlides multi-select: "Which of these are Nexus building blocks?", correct: **Service, Operation, Endpoint, Registry**.
-- AhaSlides match pairs: match each primitive to its job.
-- AhaSlides numeric: "Maximum sync handler runtime, in seconds?", answer: **10**.
-- AhaSlides numeric: "Maximum async Schedule-to-Close on Temporal Cloud, in days?", answer: **60**.
-- "Score doesn't matter yet, leaderboard's at halftime. Let's recap before Ch 2."
+- AhaSlides live 5, pick answer: "Two teams, two namespaces, an audit boundary between them. Best fit?" Correct: **Nexus Operation**.
+- AhaSlides live 6, pick answer: "Same namespace, sibling workflow you control end-to-end. Best fit?" Correct: **Child Workflow**.
+- AhaSlides live 7, pick answer: "You need to call a third-party HTTP API from inside a workflow. Best fit?" Correct: **Activity**.
+- AhaSlides live 8, multi-select: "Which of these are Nexus building blocks?" Correct (all four): **Service, Operation, Endpoint, Registry**. Distractors: Channel, Topic.
+- AhaSlides live 9, match pairs: "Match each Nexus primitive to its job."
+  - Service → Shared contract between teams
+  - Operation → One unit of cross-team work
+  - Endpoint → Reverse proxy: routing entry to a namespace and task queue
+  - Registry → Runtime lookup by name
+- AhaSlides live 10, short answer (numeric): "Maximum sync handler runtime, in seconds?" Answer: **10**.
+- AhaSlides live 11, short answer (numeric): "Maximum async Schedule-to-Close on Temporal Cloud, in days?" Answer: **60**.
+- AhaSlides live 12, leaderboard: standings after Ch 1. Pause for a beat, name top 3, then advance to Slidev.
+- "Standings are live. Let's recap before Ch 2."
 -->
 
 ---

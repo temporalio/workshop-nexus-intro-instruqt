@@ -12,13 +12,10 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
+- **AhaSlides live 13** — word cloud: "What does 'service contract' mean to you? (One or two words.)"
 - "Before I tell you what a Nexus Service is, I want to know what you already think a service contract is. One word."
 - "We've got gRPC people, OpenAPI people, schema people. Good news: Nexus's contract is the same idea, expressed in your SDK's native types."
 - "Hold those models in your head. We're about to use the same idea."
-
-## Teaching notes
-
-- AhaSlides word cloud trigger: "What does 'service contract' mean to you?"
 -->
 
 ---
@@ -261,13 +258,9 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
-- "Quick check before you write the contract yourselves. One question, drag the steps into order."
-- "Got it? Good. Now go write it. Switch over to Instruqt, you have 12 minutes."
-
-## Teaching notes
-
-- AhaSlides correct order trigger: "Put the steps for defining a Nexus Service in the right order."
-- Expected order: import nexusrpc → declare class → add `@nexusrpc.service` decorator → declare typed Operations.
+- **No AhaSlides question for Ch 2.** The "Put these steps in order" graded slide was removed; dragging code-step ordering plays awkwardly live and added little. This Slidev section can be skipped or repurposed as a verbal recap before sending the room to Instruqt.
+- "Quick recap before you write the contract yourselves. Service definition is `import`, `@nexusrpc.service`, then `Operation[Input, Output]` per cross-team call. That's it."
+- "Now go write it. Switch over to Instruqt, you have 12 minutes."
 -->
 
 ---

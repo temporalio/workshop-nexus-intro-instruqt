@@ -232,8 +232,9 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
+- **AhaSlides live 2 to 3** (open warmups: word cloud + scale; you should be on live 1, the title, when you start this section).
 - "Alright, while you're settling in, let's get a feel for the room. Hop over to your AhaSlides tab. Two quick questions."
-- AhaSlides word cloud: "One word for cross-team Temporal integration today."
-- AhaSlides scale 1-5: "How comfortable are you with Temporal Workflows, Activities, and Updates?"
+- AhaSlides live 2, word cloud: "One word for cross-team Temporal integration today."
+- AhaSlides live 3, scale 1-5: "How comfortable are you with Temporal Workflows, Activities, and Updates?"
 - "Cool, that gives me what I need to pace this. Back to the main screen, let's actually look at what we're going to build."
 -->

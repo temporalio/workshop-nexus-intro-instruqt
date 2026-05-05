@@ -430,17 +430,17 @@ layout: section
 ahaslides.com/NEXUSWS
 
 <!--
+- **AhaSlides live 14 to 15** (two graded questions: multi-select then pick-answer). **Live 16 is the Ch 3 leaderboard.**
 - "Two questions, both graded. First one's a multi-select."
+- AhaSlides live 14, multi-select (graded): "When is a sync Nexus handler the right tool?"
+  - Correct (all three): **Forwarding to a Workflow (start it, send a Signal, Query, or Update)**; **Deterministic in-process compute (rule check, math, cached lookups)**; **Reliable downstream Temporal infrastructure (Temporal Cloud, Kafka)**.
+- AhaSlides live 15, pick answer (graded): "Your sync handler routinely takes 9.8 seconds. What's the safe move?" Correct: **Convert it to a `workflow_run_operation` (async)**.
+- AhaSlides live 16, leaderboard: standings after Ch 3. Pause briefly, name new top 3, advance.
 - "OK, sync handler concepts locked in. Now let's wire one up. Back to slides for the Worker registration, then off to Instruqt."
 
 ## Teaching notes
 
-- AhaSlides multi-select trigger: "When is a sync Nexus handler the right tool?"
-  - Correct answers: Send a Signal, Query, or Update to a running Workflow; latency-sensitive lookups under 10s; simple operations with no durable state.
-  - Distractors: long-running approval workflows; operations that must survive a Worker restart.
-- AhaSlides pick-answer trigger: "Your sync handler routinely takes 9.8s. What's the safe move?"
-  - Correct: Convert it to a `workflow_run_operation` (async).
-  - 9.8s isn't a problem until it is. The safe move is to move out of the sync envelope entirely.
+- 9.8s isn't a problem until it is. The safe move is to move out of the sync envelope entirely.
 - Andragogy: the Signal/Query/Update answer is the canonical sync use case per the docs and is exactly what `submit_review` does later in the workshop.
 -->
 

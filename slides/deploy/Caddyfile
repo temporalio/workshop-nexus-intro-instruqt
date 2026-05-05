@@ -59,15 +59,42 @@ nexus.example.com {
         reverse_proxy localhost:3030
     }
 
-    # Slidev / Vite internal endpoints (e.g. /@server-reactive/*) are
-    # emitted at the root path even when Slidev runs with --base /slides/.
-    # The dev server only answers them under the prefix, so rewrite the
-    # path before proxying. Without this rewrite the presenter view
-    # mounts but speaker notes never load because /@server-reactive/nav
-    # falls through to the landing page handler instead of reaching the
-    # dev server.
+    # Slidev / Vite internal endpoints have two conventions on the dev
+    # server: GET handlers honour --base (so the JS module URL is at
+    # /slides/@server-reactive/nav), but the POST sync handlers from
+    # vite-plugin-vue-server-ref are registered at the ROOT regardless
+    # of --base (POST /@server-reactive/nav). Caddy has to split the
+    # two: rewrite the GET, pass the POST through unchanged.
+    #
+    # Without this split, presenter -> audience navigation sync breaks:
+    # the presenter posts to /@server-reactive/nav and a rewritten
+    # /slides/@server-reactive/nav returns 404, so the broadcast that
+    # tells /slides clients to advance never fires.
+    @serverReactiveSync {
+        method POST
+        path /@server-reactive/*
+    }
+    handle @serverReactiveSync {
+        reverse_proxy localhost:3030
+    }
+
+    # Slidev / Vite internal GET endpoints (e.g. /@server-reactive/*,
+    # /@vite/*, /@id/*, /@fs/*) are emitted at the root path even when
+    # Slidev runs with --base /slides/. The dev server only answers them
+    # under the prefix, so rewrite the path before proxying. Without
+    # this, presenter view mounts but the @server-reactive module never
+    # loads.
     handle /@* {
         rewrite * /slides{uri}
+        reverse_proxy localhost:3030
+    }
+
+    # Slidev's slide-info JSON API (/__slidev/slides/<n>.json) is the
+    # canonical data source for the NoteEditable / NoteStatic components
+    # in presenter mode. Slidev registers this at the root of its dev
+    # server REGARDLESS of --base, so it must NOT be rewritten - just
+    # proxied through. Without this, presenter notes never load.
+    handle /__slidev/* {
         reverse_proxy localhost:3030
     }
 
